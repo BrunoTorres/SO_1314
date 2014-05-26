@@ -107,7 +107,6 @@ void addConc (dist *lista_ptr, char *n_concelho, const int n_casos)
         if (strcmp(depois_ptr->nome,n_concelho)==0){
             depois_ptr->c_n_casos += n_casos;
             flag=1;
-            break;
         }
         depois_ptr = depois_ptr->next;
         antes_ptr = antes_ptr->next;
@@ -293,8 +292,8 @@ int incrementar(char *nome[], unsigned valor){
                     caminho[1] = strtok_r(NULL,":", &saveptr);
                     caminho[2] = strtok_r(NULL,":", &saveptr);
                     caminho[3] = strtok_r(NULL,":", &saveptr);
-                    //addConc(d, caminho[1], atoi(caminho[3]));
-                    //addFreg(d, caminho[1], caminho[2], atoi(caminho[3]));
+                    addConc(d, caminho[1], atoi(caminho[3]));
+                    addFreg(d, caminho[1], caminho[2], atoi(caminho[3]));
                     write(f_fdin,caminho[0],strlen(caminho[0]));
                     write(f_fdin,caminho[1],strlen(caminho[1]));
                     write(f_fdin,caminho[2],strlen(caminho[2]));
@@ -311,11 +310,11 @@ int incrementar(char *nome[], unsigned valor){
                         write(fd,aux->nome,strlen(aux->nome));
                         conc *aux2 = aux->concelhos;
                         while(aux2){
-                            write(fd,"C ",2);
+                            write(fd," C ",2);
                             write(fd,aux2->nome,strlen(aux2->nome));
                             freg *aux3 = aux2->freguesias;
                             while(aux3){
-                                write(fd,"F ",2);
+                                write(fd," F ",2);
                                 write(fd,aux3->nome,strlen(aux3->nome));
                                 write(fd,"\n",1);
                                 aux3 = aux3->next;
