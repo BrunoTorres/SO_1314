@@ -45,6 +45,14 @@ char* tira(char *str){
     return str;
 }
 
+// Função auxiliar que retira o \n do final da string se existir
+
+char* normaliza(char *linha) 
+{
+    if ((int)linha[strlen(linha)-1] == 10) linha[strlen(linha)-1] = '\0';
+    return linha;
+}
+
 char *tiraEspacos(char* msg){
     char *aux = malloc(sizeof(msg));
     int n=0,m=0;
@@ -96,7 +104,7 @@ void addConc (dist *lista_ptr, char *n_concelho, const int n_casos)
     freg *nova_freg;
     int flag=0;
     
-    
+    lista_ptr->d_n_casos += n_casos;
     antes_ptr = lista_ptr->concelhos;
     depois_ptr =  antes_ptr->next;
     
@@ -107,6 +115,7 @@ void addConc (dist *lista_ptr, char *n_concelho, const int n_casos)
         if (strcmp(depois_ptr->nome,n_concelho)==0){
             depois_ptr->c_n_casos += n_casos;
             flag=1;
+            break;
         }
         depois_ptr = depois_ptr->next;
         antes_ptr = antes_ptr->next;
@@ -116,44 +125,14 @@ void addConc (dist *lista_ptr, char *n_concelho, const int n_casos)
         novo_ptr = malloc(sizeof(conc));
         nova_freg = malloc(sizeof(freg));
         initFreg(nova_freg);
-        //char *str;
-        //sprintf(str,"%s",n_concelho);
-        novo_ptr->nome = n_concelho;
+        
+        novo_ptr->nome = strdup(n_concelho);
         novo_ptr->c_n_casos = n_casos;
         novo_ptr->freguesias = nova_freg;
         antes_ptr->next = novo_ptr;
         novo_ptr->next = depois_ptr;
     }
 }
-
-/*
-void addConc (dist *lista_ptr, char *n_concelho, const int n_casos){
-    dist *aux, *ant, *actual;
-    *ant = **lista_ptr;
-    *actual = **lista_ptr;
-
-    while (*actual && (strcmp(n_concelho,(*actual)->nome)!= 0)){
-        *ant = *actual;
-        *actual = (*actual)->next;
-    }
-
-    if (*actual && (strcmp(n_concelho,(*actual)->nome)== 0)) {
-        (*actual)->c_n_casos+= n_casos;
-    } else {
-        *aux = malloc(sizeof(conc));
-        (*aux)->nome = strdup(n_concelho);
-        (*aux)->c_n_casos = n_casos;
-        (*aux)->next = (*actual);
-        (*aux)->freguesias = NULL;
-
-        if ((*ant) == (*actual)){
-            (**lista_ptr) = (*aux);
-        } else {
-            (*ant)->next = (*aux);
-        }
-    }
-}
-*/
 
 void addFreg (dist *lista_ptr, char *n_concelho, char *n_freguesia, const int n_casos)
 {
@@ -184,6 +163,7 @@ void addFreg (dist *lista_ptr, char *n_concelho, char *n_freguesia, const int n_
         if (strcmp(depois_ptr->nome,n_freguesia)==0) {
             depois_ptr->f_n_casos += n_casos;
             flag =1;
+            break;
         }
         /* Advance the pointers */
         depois_ptr = depois_ptr->next;
@@ -192,7 +172,7 @@ void addFreg (dist *lista_ptr, char *n_concelho, char *n_freguesia, const int n_
     
     if (flag != 1){
         novo_ptr = malloc(sizeof(freg));
-        novo_ptr->nome = n_freguesia;
+        novo_ptr->nome = strdup(n_freguesia);
         novo_ptr->f_n_casos = n_casos;
         
         antes_ptr->next = novo_ptr;
@@ -200,34 +180,138 @@ void addFreg (dist *lista_ptr, char *n_concelho, char *n_freguesia, const int n_
     }
 }
 
+void alterapid(char *dist, int pid){
+    filho *aux = filhos;
+    aux = aux->next;
+    while (aux){
+        if (strcmp(aux->nome,dist)==0){
+            aux->pid = pid;
+            break;
+        }
+        aux = aux->next;
+    }
+}
+
+// Segue Filho
+void hand_chld(int s){
+    if (s == SIGCHLD){
+        pid_t pid;
+        pid = wait(NULL);
+        filho *aux = filhos;
+        int flag =0;
+
+        aux = aux->next;
+        while (aux){
+            if (aux->pid == pid){
+                printf("O Filho %s com o pid %d Crashou!\n", aux->nome,aux->pid);
+                flag =1;
+                break;
+            }
+            aux = aux->next;
+        }
+
+        if (flag!=0){
+            // CRIAR FILHO DE NOVO
+            if ((pid=fork())==0){
+                printf("O Filho %s com o pid %d Reiniciou!\n", aux->nome,getpid());
+                char linha_lista[100]; // Linha TXT
+                char *caminho[4];
+                char *saveptr;
+                char *path; // TXT
+                char *nome = strdup(aux->nome);
+                int valor,f_cts,f_fdin;
+                char f_myfifo[20];
+                char f_buf[BUFSIZ]; // String Recebida
+
+                sprintf(f_myfifo, "/tmp/%s",nome); // PATH Pipe
+            
+                mkfifo(f_myfifo, 0666);
+                dist *d = NULL;
+                d = malloc(sizeof(dist));
+                initDist(d,nome);
+                
+                sprintf(path, "/tmp/%s.txt",nome);
+                FILE *file_lista= fopen(path, "r");
+                while (fgets(linha_lista, 100, file_lista)){
+                    normaliza(linha_lista);
+                    caminho[0] = strtok_r(linha_lista,":", &saveptr);
+                    caminho[1] = strtok_r(NULL,":", &saveptr);
+                    caminho[2] = strtok_r(NULL,":", &saveptr);
+                    caminho[3] = strtok_r(NULL,":", &saveptr);
+                    valor = atoi(caminho[3]);
+                    addConc(d, caminho[1], valor);
+                    addFreg(d, caminho[1], caminho[2], valor);
+                }
+                fclose(file_lista);
+
+                f_fdin = open(path,O_CREAT |  O_TRUNC | O_WRONLY | O_APPEND,0666); // Escreve TXT
+                f_cts = open(f_myfifo, O_RDONLY); // Lê do Pipe
+                
+                while (1) {
+                read(f_cts, f_buf, BUFSIZ);
+                if (strcmp(f_buf,"")>0){
+                    caminho[0] = strtok_r(f_buf,":", &saveptr);
+                    caminho[1] = strtok_r(NULL,":", &saveptr);
+                    caminho[2] = strtok_r(NULL,":", &saveptr);
+                    caminho[3] = strtok_r(NULL,":", &saveptr);
+                    addConc(d, caminho[1], atoi(caminho[3]));
+                    addFreg(d, caminho[1], caminho[2], atoi(caminho[3]));
+                    write(f_fdin,caminho[0],strlen(caminho[0]));
+                    write(f_fdin,":",1);
+                    write(f_fdin,caminho[1],strlen(caminho[1]));
+                    write(f_fdin,":",1);
+                    write(f_fdin,caminho[2],strlen(caminho[2]));
+                    write(f_fdin,":",1);
+                    write(f_fdin,caminho[3],strlen(caminho[3]));
+                    write(f_fdin,"\n",1);
+                    memset(caminho, 0, sizeof(caminho));
+
+                    dist *aux = d;
+                    
+                    conc *aux2 = aux->concelhos;
+                    if (strcmp(aux->nome,"") != 0) {
+                        printf("NOME DISTRITO %s\n",aux->nome);
+                        printf("Nº Casos Distrito %d\n",aux->d_n_casos);
+                    }
+                    while (aux2){
+                        if (strcmp(aux2->nome,"") != 0) {
+                            printf("\tNOME CONCELHO %s\n",aux2->nome);
+                            printf("\tNº Casos Concelho %d\n",aux2->c_n_casos);
+                        }
+                        freg *aux3 = aux2->freguesias;
+                        while (aux3) {
+                            if (strcmp(aux3->nome,"") != 0) {
+                                printf("\t\tNOME FREGUESIA %s\n",aux3->nome);
+                                printf("\t\tNº Casos Freguesia %d\n",aux3->f_n_casos);
+                            }
+                            aux3 = aux3->next;
+                        }
+                        aux2 = aux2->next;
+                    }
+                    printf("\n");
+                }
+                
+                memset(f_buf, 0, sizeof(f_buf));
+                
+            }
+            close(f_cts);
+            close(f_fdin);
+            _exit(1);
+
+            } else {
+                alterapid(aux->nome, pid);
+            }
+        }
+    }
+}
+
 int incrementar(char *nome[], unsigned valor){
-    //printf("%s -> %d\n", nome[0], valor);
     filho *aux = filhos;
     int client_to_server;
     
     //TRIM ' '
     if (nome[1] && (nome[1][0] == ' ')) nome[1] = tira(nome[1]);
     if (nome[2] && (nome[2][0] == ' ')) nome[2] = tira(nome[2]);
-    /*
-    int i =0;
-    while (((nome[0][i] >= 65) && (nome[0][i] <= 90)) || ((nome[0][i] >= 97) && (nome[0][i] <= 122)) ){
-        i++;
-    }
-    nome[0][i] = '\0';
-
-    i =0;
-    while (((nome[1][i] >= 65) && (nome[1][i] <= 90)) || ((nome[1][i] >= 97) && (nome[1][i] <= 122)) ){
-        i++;
-    }
-    nome[1][i] = '\0';
-
-    i =0;
-    while (((nome[2][i] >= 65) && (nome[2][i] <= 90)) || ((nome[2][i] >= 97) && (nome[2][i] <= 122)) ){
-        i++;
-    }
-    nome[2][i] = '\0';
-    */
-    printf("1 - %s\n2 - %s\n3 - %s\nValor - %d\n\n",nome[0],nome[1],nome[2],valor);
     
     // Verifica se existe algum filho com o Distrito
     while (aux){
@@ -251,7 +335,7 @@ int incrementar(char *nome[], unsigned valor){
         // Cria Filho
         if ((pid=fork())==0) {
             // FILHO
-
+            printf("Init Child: %s\n",nome[0]);
             int f_cts;
             int f_fdin;
             char f_buf[BUFSIZ]; // String Recebida
@@ -266,8 +350,7 @@ int incrementar(char *nome[], unsigned valor){
             
             mkfifo(f_myfifo, 0666);
             
-            f_fdin = open(f_file,O_CREAT |  O_TRUNC | O_WRONLY,0666); // Escreve TXT
-            
+            f_fdin = open(f_file,O_CREAT |  O_TRUNC | O_WRONLY | O_APPEND,0666); // Escreve TXT
 
             dist *d = NULL;
             d = malloc(sizeof(dist));
@@ -278,8 +361,11 @@ int incrementar(char *nome[], unsigned valor){
             addConc(d, nome[1], valor);
             addFreg(d, nome[1], nome[2], valor);
             write(f_fdin, nome[0], strlen(nome[0]));
+            write(f_fdin,":",1);
             write(f_fdin, nome[1], strlen(nome[1]));
+            write(f_fdin,":",1);
             write(f_fdin, nome[2], strlen(nome[2]));
+            write(f_fdin,":",1);
             write(f_fdin, v, strlen(v));
             write(f_fdin,"\n",1);
             
@@ -295,34 +381,38 @@ int incrementar(char *nome[], unsigned valor){
                     addConc(d, caminho[1], atoi(caminho[3]));
                     addFreg(d, caminho[1], caminho[2], atoi(caminho[3]));
                     write(f_fdin,caminho[0],strlen(caminho[0]));
+                    write(f_fdin,":",1);
                     write(f_fdin,caminho[1],strlen(caminho[1]));
+                    write(f_fdin,":",1);
                     write(f_fdin,caminho[2],strlen(caminho[2]));
+                    write(f_fdin,":",1);
                     write(f_fdin,caminho[3],strlen(caminho[3]));
                     write(f_fdin,"\n",1);
                     memset(caminho, 0, sizeof(caminho));
 
-                    // TESTE
                     dist *aux = d;
-                    int fd;
-                    fd = open("/tmp/fim.txt",O_CREAT |  O_TRUNC | O_WRONLY,0666); // Escreve TXT
-                    //if(aux){
-                        write(fd,"D ",2);
-                        write(fd,aux->nome,strlen(aux->nome));
-                        conc *aux2 = aux->concelhos;
-                        while(aux2){
-                            write(fd," C ",2);
-                            write(fd,aux2->nome,strlen(aux2->nome));
-                            freg *aux3 = aux2->freguesias;
-                            while(aux3){
-                                write(fd," F ",2);
-                                write(fd,aux3->nome,strlen(aux3->nome));
-                                write(fd,"\n",1);
-                                aux3 = aux3->next;
-                            }    
-                            aux2 = aux2->next;
-                        }
-                    //}
                     
+                    conc *aux2 = aux->concelhos;
+                    if (strcmp(aux->nome,"") != 0) {
+                        printf("NOME DISTRITO %s\n",aux->nome);
+                        printf("Nº Casos Distrito %d\n",aux->d_n_casos);
+                    }
+                    while (aux2){
+                        if (strcmp(aux2->nome,"") != 0) {
+                            printf("\tNOME CONCELHO %s\n",aux2->nome);
+                            printf("\tNº Casos Concelho %d\n",aux2->c_n_casos);
+                        }
+                        freg *aux3 = aux2->freguesias;
+                        while (aux3) {
+                            if (strcmp(aux3->nome,"") != 0) {
+                                printf("\t\tNOME FREGUESIA %s\n",aux3->nome);
+                                printf("\t\tNº Casos Freguesia %d\n",aux3->f_n_casos);
+                            }
+                            aux3 = aux3->next;
+                        }
+                        aux2 = aux2->next;
+                    }
+                    printf("\n");
                 }
                 
                 memset(f_buf, 0, sizeof(f_buf));
@@ -331,74 +421,20 @@ int incrementar(char *nome[], unsigned valor){
             close(f_cts);
             close(f_fdin);
             _exit(1);
-            /*
-            //addConc(d, nome[1], atoi(nome[3]));
-            //addFreg(d, nome[1], nome[2], atoi(nome[3]));
-            
-            // Escrever estrutura para o ficheiro .txt
-            
-            dist *esc = d;
-            char v[15];
-            conc *esc2 = esc->concelhos;
-            printf("DIST: %s\n", esc->nome);
-            
-            while(esc2){
-                freg *esc3 = esc2->freguesias;
-                while(esc3){
-                    write(f_fdin, esc->nome, strlen(esc->nome));
-                    printf("W DISTRITO: %s\n", esc->nome);
-                    write(f_fdin, esc2->nome, strlen(esc2->nome));
-                    printf("W CONCELHO: %s\n", esc2->nome);
-                    write(f_fdin, esc3->nome, strlen(esc3->nome));
-                    printf("W FREGUESIA: %s\n", esc3->nome);
-                    sprintf(v, "%d", esc3->f_n_casos);
-                    write(f_fdin, v, strlen(v));
-                    write(f_fdin,"\n",1);
-                    esc3 = esc3->next;
-                }
-                esc2 = esc2->next;
-            }
-            //write(f_cts, v, sizeof(v));
-            //memset(v, 0, sizeof(v));
-            //write(f_fdin,"\n",1);
-            while (1)
-            {
-                read(f_cts, f_buf, BUFSIZ);
-                if (strcmp(f_buf,"")>0){
-                    //printf("MSG > %s\n", buf);
-                    //write(f_fdin,f_buf,strlen(f_buf));
-                    caminho[0] = strtok_r(f_buf,":", &saveptr);
-                    caminho[1] = strtok_r(NULL,":", &saveptr);
-                    caminho[2] = strtok_r(NULL,":", &saveptr);
-                    caminho[3] = strtok_r(NULL,":", &saveptr);
-                    //addConc(d, caminho[1], atoi(caminho[3]));
-                    //addFreg(d, caminho[1], caminho[2], atoi(caminho[3]));
-                    write(f_fdin,caminho[0],strlen(caminho[0]));
-                    write(f_fdin,caminho[1],strlen(caminho[1]));
-                    write(f_fdin,caminho[2],strlen(caminho[2]));
-                    write(f_fdin,caminho[3],strlen(caminho[3]));
-                    write(f_fdin,"\n",1);
-                    memset(caminho, 0, sizeof(caminho));
-                }
-                memset(f_buf, 0, sizeof(f_buf));
-                
-            }
-            close(f_cts);
-            close(f_fdin);
-            _exit(1);
-            */
+           
         } else {
             addFilho(filhos, nome[0], pid);
-            //signal(SIGCHLD,hand2); //Control-C
+            signal(SIGCHLD,hand_chld); //Child Follow
         }
     }
     return 0;
 }
 
 // Control-C
-void hand(int s){
+void hand_int(int s){
     if (s == SIGINT){
         filho *aux = filhos;
+        aux = aux->next;
         while(aux){
             if(strcmp(aux->nome,"")!=0){
                 printf("\nKILL :: Filho %s com o PID %d\n",aux->nome,aux->pid);
@@ -406,13 +442,6 @@ void hand(int s){
             }
             aux = aux->next;
         }
-    }
-    exit(0);
-}
-// Segue Filho
-void hand2(int s){
-    if (s == SIGCHLD){
-        
     }
     exit(0);
 }
@@ -428,7 +457,7 @@ int main(int argc, char const *argv[])
     
     initFilho(filhos); //Inicializar
     
-    signal(SIGINT,hand); //Control-C
+    signal(SIGINT,hand_int); //Control-C
     mkfifo(myfifo, 0666); // Pipe Cliente to Server
     
     fdin = open("log.txt",O_APPEND | O_TRUNC | O_WRONLY,0666);
