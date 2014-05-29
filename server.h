@@ -27,3 +27,7 @@ typedef struct s_dist {
 	int d_n_casos;
 	struct s_conc *concelhos;
 } dist;
+
+int incrementar(char *nome[], unsigned valor);
+
+int agregar(char *prefixo[], unsigned nivel, char *path);

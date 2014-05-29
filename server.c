@@ -8,6 +8,9 @@
 #include <signal.h>
 #include "server.h"
 
+// Estutura para Guardar os Filhos
+filho *filhos = NULL;
+
 char * ajudasemPrint(char* nome){
     int i=0;
     while(nome[i]!= '.')
@@ -19,21 +22,21 @@ char * ajudasemPrint(char* nome){
     return  nome;
 }
 
-filho *filhos = NULL;
-
+// Inicializa Filho
 void initFilho(filho *d){
     d->nome = "";
     d->pid = 0;
     d->next = NULL;
 }
 
-
+// Inicializa Freg
 void initFreg(freg *d){
     d->nome = "";
     d->f_n_casos = 0;
     d->next = NULL;
 }
 
+// Inicializa Concelho
 void initConc(conc *d){
     freg *f = malloc(sizeof(freg));
     d->nome = "";
@@ -43,6 +46,7 @@ void initConc(conc *d){
     d->next = NULL;
 }
 
+// Inicializa Distrito
 void initDist(dist *d,char *d_nome){
     conc *c = malloc(sizeof(conc));
     d->nome = d_nome;
@@ -51,19 +55,19 @@ void initDist(dist *d,char *d_nome){
     d->concelhos = c;
 }
 
+// Tira ' ' do inicio da String
 char* tira(char *str){
     memmove(str, str+1, strlen(str));
     return str;
 }
 
 // Função auxiliar que retira o \n do final da string se existir
-
-char* normaliza(char *linha) 
-{
+char* normaliza(char *linha){
     if ((int)linha[strlen(linha)-1] == 10) linha[strlen(linha)-1] = '\0';
     return linha;
 }
 
+// Tira Espaços
 char *tiraEspacos(char* msg){
     char *aux = malloc(sizeof(msg));
     int n=0,m=0;
@@ -78,8 +82,8 @@ char *tiraEspacos(char* msg){
     return aux;
 }
 
-void addFilho (filho *lista_ptr, char *nome, const int pid)
-{
+// Adiciona Filho
+void addFilho (filho *lista_ptr, char *nome, const int pid){
     filho *antes_ptr;
     filho *depois_ptr;
     filho *novo_ptr;
@@ -105,8 +109,8 @@ void addFilho (filho *lista_ptr, char *nome, const int pid)
     
 }
 
-void addConc (dist *lista_ptr, char *n_concelho, const int n_casos)
-{
+// Adiciona Concelho
+void addConc (dist *lista_ptr, char *n_concelho, const int n_casos){
 
     conc *antes_ptr; 
     conc *depois_ptr;
@@ -145,8 +149,8 @@ void addConc (dist *lista_ptr, char *n_concelho, const int n_casos)
     }
 }
 
-void addFreg (dist *lista_ptr, char *n_concelho, char *n_freguesia, const int n_casos)
-{
+// Adiciona Freg
+void addFreg (dist *lista_ptr, char *n_concelho, char *n_freguesia, const int n_casos){
     freg *antes_ptr;
     freg *depois_ptr;
     freg *novo_ptr;
@@ -191,6 +195,7 @@ void addFreg (dist *lista_ptr, char *n_concelho, char *n_freguesia, const int n_
     }
 }
 
+// Altera PID
 void alterapid(char *dist, int pid){
     filho *aux = filhos;
     aux = aux->next;
@@ -228,10 +233,10 @@ void hand_chld(int s){
                 char linha_lista[100]; // Linha TXT
                 char *caminho[10];
                 char *saveptr;
-                char *path; // TXT
+                char path[40]; // TXT
                 char *nome = strdup(aux->nome);
                 int valor,f_cts,f_fdin;
-                char f_myfifo[20];
+                char f_myfifo[40];
                 char f_buf[BUFSIZ]; // String Recebida
 
                 sprintf(f_myfifo, "/tmp/%s",nome); // PATH Pipe
@@ -240,7 +245,6 @@ void hand_chld(int s){
                 dist *d = NULL;
                 d = malloc(sizeof(dist));
                 initDist(d,nome);
-                
                 sprintf(path, "/tmp/%s.txt",nome);
                 FILE *file_lista= fopen(path, "r");
                 while (fgets(linha_lista, 100, file_lista)){
@@ -254,7 +258,6 @@ void hand_chld(int s){
                     addFreg(d, caminho[1], caminho[2], valor);
                 }
                 fclose(file_lista);
-
                 f_fdin = open(path,O_RDWR | O_APPEND,0666); // Escreve TXT
                 f_cts = open(f_myfifo, O_RDONLY); // Lê do Pipe
                 
@@ -273,27 +276,27 @@ void hand_chld(int s){
                             dist *aux = d;
                             int n_path;
                             int nivel;
-                            char *path;
+                            char *path2;
                         //printf("ANTES DE\n");
 
                             if (caminho[3]){
                                 nivel = atoi(caminho[2]);
-                                path = strdup(caminho[3]);
+                                path2 = strdup(caminho[3]);
                             }
                             if (caminho[4]) {
                                 nivel = atoi(caminho[3]);
-                                path = strdup(caminho[4]);
+                                path2 = strdup(caminho[4]);
                             }
 
                             if (caminho[5]){
                                 nivel = atoi(caminho[4]);
-                                path = strdup(caminho[5]);
+                                path2 = strdup(caminho[5]);
                             }
 
-                            path=ajudasemPrint(path);
+                            path2=ajudasemPrint(path2);
                         //printf("CHEGUEI!!! PATH: %s\n",path);
 
-                            n_path = open(path,O_CREAT | O_TRUNC | O_WRONLY ,0666);
+                            n_path = open(path2,O_CREAT | O_TRUNC | O_WRONLY ,0666);
                         //printf("OPEEEENNNNN\n");
                             conc *aux2 = aux->concelhos;
                             if (strcmp(aux->nome,"") != 0) {
@@ -389,6 +392,7 @@ void hand_chld(int s){
     }
 }
 
+// Incrementa
 int incrementar(char *nome[], unsigned valor){
     filho *aux = filhos;
     int client_to_server;
@@ -587,15 +591,14 @@ int incrementar(char *nome[], unsigned valor){
     return 0;
 }
 
+// Agrega
 int agregar(char *prefixo[], unsigned nivel, char *path){
     int n_mtf;
     char mtf[20];
     char msg[60];
     sprintf(mtf, "/tmp/%s",prefixo[1]); // PATH Pipe
     n_mtf = open(mtf, O_WRONLY);
-    printf("TOPPPPP\n");
     sprintf(msg,"%s:%s:%d:%s",prefixo[0],prefixo[1],(int)nivel,path);
-    printf("AGREGAR ANTES IF\n");
     if (prefixo[2]){
         if (prefixo[3]) {
             sprintf(msg,"%s:%s:%s:%s:%d:%s",prefixo[0],prefixo[1],prefixo[2],prefixo[3],(int)nivel,path);
@@ -603,7 +606,6 @@ int agregar(char *prefixo[], unsigned nivel, char *path){
             sprintf(msg,"%s:%s:%s:%d:%s",prefixo[0],prefixo[1],prefixo[2],(int)nivel,path);
         }
     }
-    printf("AGREGAR FIM IF\n");
     write(n_mtf, msg, strlen(msg));
     close(n_mtf);
     return 0;
@@ -625,6 +627,7 @@ void hand_int(int s){
     exit(0);
 }
 
+// Envia Mensagem ao Filho
 void mensagem (char *filho, char *msg){
     int n_mtf;
     char mtf[20];
@@ -634,8 +637,7 @@ void mensagem (char *filho, char *msg){
     close(n_mtf);
 }
 
-int main(int argc, char const *argv[])
-{
+int main(int argc, char const *argv[]){
     int cts;
     char *myfifo = "/tmp/cts";
     char buf[BUFSIZ];
