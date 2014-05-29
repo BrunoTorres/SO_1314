@@ -8,6 +8,17 @@
 #include <signal.h>
 #include "server.h"
 
+char * ajudasemPrint(char* nome){
+    int i=0;
+    while(nome[i]!= '.')
+        i++;
+    i++;
+    while(((nome[i]>= 65)&&(nome[i]<=90)) || ((nome[i]>= 97)&&(nome[i]<=122)) )
+        i++;
+    nome[i]='\0';
+    return  nome;
+}
+
 filho *filhos = NULL;
 
 void initFilho(filho *d){
@@ -215,7 +226,7 @@ void hand_chld(int s){
             if ((pid=fork())==0){
                 printf("O Filho %s com o pid %d Reiniciou!\n", aux->nome,getpid());
                 char linha_lista[100]; // Linha TXT
-                char *caminho[4];
+                char *caminho[10];
                 char *saveptr;
                 char *path; // TXT
                 char *nome = strdup(aux->nome);
@@ -250,23 +261,82 @@ void hand_chld(int s){
                 while (1) {
                     read(f_cts, f_buf, BUFSIZ);
                     if (strcmp(f_buf,"")>0){
-                        if (strcmp(f_buf,"lista")!=0){
-                            caminho[0] = strtok_r(f_buf,":", &saveptr);
-                            caminho[1] = strtok_r(NULL,":", &saveptr);
-                            caminho[2] = strtok_r(NULL,":", &saveptr);
-                            caminho[3] = strtok_r(NULL,":", &saveptr);
-                            addConc(d, caminho[1], atoi(caminho[3]));
-                            addFreg(d, caminho[1], caminho[2], atoi(caminho[3]));
-                            write(f_fdin,caminho[0],strlen(caminho[0]));
-                            write(f_fdin,":",1);
-                            write(f_fdin,caminho[1],strlen(caminho[1]));
-                            write(f_fdin,":",1);
-                            write(f_fdin,caminho[2],strlen(caminho[2]));
-                            write(f_fdin,":",1);
-                            write(f_fdin,caminho[3],strlen(caminho[3]));
-                            write(f_fdin,"\n",1);
-                            memset(caminho, 0, sizeof(caminho));
-                        } else {
+                        normaliza(f_buf);
+                        caminho[0] = strtok_r(f_buf,":", &saveptr);
+                        caminho[1] = strtok_r(NULL,":", &saveptr);
+                        caminho[2] = strtok_r(NULL,":", &saveptr);
+                        caminho[3] = strtok_r(NULL,":", &saveptr);
+                        caminho[4] = strtok_r(NULL,":", &saveptr);
+                        caminho[5] = strtok_r(NULL,":", &saveptr);
+                    //printf("0-|%s| 1-|%s| 2-|%s| 3-|%s| 4-|%s| 5-|%s| \n", caminho[0], caminho[1], caminho[2],caminho[3],caminho[4],caminho[5]);
+                        if(strcmp(caminho[0],"agregar")==0){
+                            dist *aux = d;
+                            int n_path;
+                            int nivel;
+                            char *path;
+                        //printf("ANTES DE\n");
+
+                            if (caminho[3]){
+                                nivel = atoi(caminho[2]);
+                                path = strdup(caminho[3]);
+                            }
+                            if (caminho[4]) {
+                                nivel = atoi(caminho[3]);
+                                path = strdup(caminho[4]);
+                            }
+
+                            if (caminho[5]){
+                                nivel = atoi(caminho[4]);
+                                path = strdup(caminho[5]);
+                            }
+
+                            path=ajudasemPrint(path);
+                        //printf("CHEGUEI!!! PATH: %s\n",path);
+
+                            n_path = open(path,O_CREAT | O_TRUNC | O_WRONLY ,0666);
+                        //printf("OPEEEENNNNN\n");
+                            conc *aux2 = aux->concelhos;
+                            if (strcmp(aux->nome,"") != 0) {
+                           // printf("NOME DISTRITO %s\n",aux->nome);
+                            //printf("Nº Casos Distrito %d\n",aux->d_n_casos);
+                                if (nivel == 0){
+                                    char str[80];
+                                    sprintf(str,"%s:%d\n",aux->nome,aux->d_n_casos);
+                                  //  printf("MSG|%s|\n", str);
+                                    write(n_path,str,strlen(str));
+                                }
+                            }
+                            while (aux2){
+                                if (strcmp(aux2->nome,"") != 0) {
+                                //printf("\tNOME CONCELHO %s\n",aux2->nome);
+                                //printf("\tNº Casos Concelho %d\n",aux2->c_n_casos);
+                                //printf("NIVEL: %d\n", nivel);
+                                    if (nivel == 1){
+                                        char str[80];
+                                        sprintf(str,"%s:%s:%d\n",aux->nome,aux2->nome,aux2->c_n_casos);
+                                  //  printf("MSG|%s|\n", str);
+                                        write(n_path,str,strlen(str));
+                                    }
+                                }
+                                freg *aux3 = aux2->freguesias;
+                                while (aux3) {
+                                    if (strcmp(aux3->nome,"") != 0) {
+                                   // printf("\t\tNOME FREGUESIA %s\n",aux3->nome);
+                                   // printf("\t\tNº Casos Freguesia %d\n",aux3->f_n_casos);
+                                        if ((nivel == 2) && ((strcmp(aux2->nome,caminho[2])==0) || (atoi(caminho[2]) !=0))) {
+                                            char str[80];
+                                            sprintf(str,"%s:%s:%s:%d\n",aux->nome,aux2->nome,aux3->nome,aux3->f_n_casos);
+                                            write(n_path,str,strlen(str));
+                                        }
+                                    }
+                                    aux3 = aux3->next;
+                                }
+                                aux2 = aux2->next;
+                            }
+                        //printf("\n");
+                            close(n_path);
+
+                        } else if (strcmp(caminho[0],"lista")==0){
                             dist *aux = d;
 
                             conc *aux2 = aux->concelhos;
@@ -290,7 +360,19 @@ void hand_chld(int s){
                                 aux2 = aux2->next;
                             }
                             printf("\n");
-                        }
+                        } else {
+                            addConc(d, caminho[1], atoi(caminho[3]));
+                            addFreg(d, caminho[1], caminho[2], atoi(caminho[3]));
+                            write(f_fdin,caminho[0],strlen(caminho[0]));
+                            write(f_fdin,":",1);
+                            write(f_fdin,caminho[1],strlen(caminho[1]));
+                            write(f_fdin,":",1);
+                            write(f_fdin,caminho[2],strlen(caminho[2]));
+                            write(f_fdin,":",1);
+                            write(f_fdin,caminho[3],strlen(caminho[3]));
+                            write(f_fdin,"\n",1);
+                            memset(caminho, 0, sizeof(caminho));
+                        } 
                     }
 
                     memset(f_buf, 0, sizeof(f_buf));
@@ -337,7 +419,7 @@ int incrementar(char *nome[], unsigned valor){
         // Cria Filho
         if ((pid=fork())==0) {
             // FILHO
-            printf("Init Child: %s\n",nome[0]);
+           // printf("Init Child: %s\n",nome[0]);
             int f_cts;
             int f_fdin;
             char f_buf[BUFSIZ]; // String Recebida
@@ -389,7 +471,7 @@ int incrementar(char *nome[], unsigned valor){
                         int n_path;
                         int nivel;
                         char *path;
-                        printf("ANTES DE\n");
+                        //printf("ANTES DE\n");
                         
                         if (caminho[3]){
                             nivel = atoi(caminho[2]);
@@ -404,32 +486,41 @@ int incrementar(char *nome[], unsigned valor){
                             nivel = atoi(caminho[4]);
                             path = strdup(caminho[5]);
                         }
-                        printf("CHEGUEI!!! PATH: %s\n",path);
+                        
+                        path=ajudasemPrint(path);
+                        //printf("CHEGUEI!!! PATH: %s\n",path);
+
                         n_path = open(path,O_CREAT | O_TRUNC | O_WRONLY ,0666);
-                        printf("OPEEEENNNNN\n");
+                        //printf("OPEEEENNNNN\n");
                         conc *aux2 = aux->concelhos;
                         if (strcmp(aux->nome,"") != 0) {
-                            printf("NOME DISTRITO %s\n",aux->nome);
-                            printf("Nº Casos Distrito %d\n",aux->d_n_casos);
+                           // printf("NOME DISTRITO %s\n",aux->nome);
+                            //printf("Nº Casos Distrito %d\n",aux->d_n_casos);
+                            if (nivel == 0){
+                                char str[80];
+                                sprintf(str,"%s:%d\n",aux->nome,aux->d_n_casos);
+                                  //  printf("MSG|%s|\n", str);
+                                write(n_path,str,strlen(str));
+                            }
                         }
                         while (aux2){
                             if (strcmp(aux2->nome,"") != 0) {
-                                printf("\tNOME CONCELHO %s\n",aux2->nome);
-                                printf("\tNº Casos Concelho %d\n",aux2->c_n_casos);
-                                printf("NIVEL: %d\n", nivel);
+                                //printf("\tNOME CONCELHO %s\n",aux2->nome);
+                                //printf("\tNº Casos Concelho %d\n",aux2->c_n_casos);
+                                //printf("NIVEL: %d\n", nivel);
                                 if (nivel == 1){
                                     char str[80];
                                     sprintf(str,"%s:%s:%d\n",aux->nome,aux2->nome,aux2->c_n_casos);
-                                    printf("MSG|%s|\n", str);
+                                  //  printf("MSG|%s|\n", str);
                                     write(n_path,str,strlen(str));
                                 }
                             }
                             freg *aux3 = aux2->freguesias;
                             while (aux3) {
                                 if (strcmp(aux3->nome,"") != 0) {
-                                    printf("\t\tNOME FREGUESIA %s\n",aux3->nome);
-                                    printf("\t\tNº Casos Freguesia %d\n",aux3->f_n_casos);
-                                    if (nivel == 2){
+                                   // printf("\t\tNOME FREGUESIA %s\n",aux3->nome);
+                                   // printf("\t\tNº Casos Freguesia %d\n",aux3->f_n_casos);
+                                    if ((nivel == 2) && ((strcmp(aux2->nome,caminho[2])==0) || (atoi(caminho[2]) !=0))) {
                                         char str[80];
                                         sprintf(str,"%s:%s:%s:%d\n",aux->nome,aux2->nome,aux3->nome,aux3->f_n_casos);
                                         write(n_path,str,strlen(str));
@@ -564,7 +655,6 @@ int main(int argc, char const *argv[])
     while (1)
     {
         read(cts, buf, BUFSIZ);
-        
         if (strcmp(buf,"")>0){
             normaliza(buf);
             if(buf[0]=='['){
