@@ -6,10 +6,40 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <signal.h>
-#include "server.h"
+
+// Filho
+typedef struct s_filho {
+    char *nome;
+    int pid;
+    struct s_filho *next;
+} filho;
+
+// Freguesia
+typedef struct s_freg {
+    char *nome;
+    int f_n_casos;
+    struct s_freg *next;
+} freg;
+
+// Concelho
+typedef struct s_conc {
+    char *nome;
+    int c_n_casos;
+    struct s_freg *freguesias;
+    struct s_conc *next;
+} conc;
+
+// Distrito
+typedef struct s_dist {
+    char *nome;
+    int d_n_casos;
+    struct s_conc *concelhos;
+} dist;
 
 // Estutura para Guardar os Filhos
 filho *filhos = NULL;
+
+int conta=0;
 
 char * ajudasemPrint(char* nome){
     int i=0;
@@ -651,7 +681,8 @@ int main(int argc, char const *argv[]){
                 caminho[1] = strtok_r(caminho[1],",", &caminho[2]);
                 
                 if (incrementar(caminho,atoi(valor))==0){
-                    printf("Adicionado com Sucesso!!\n");
+                    conta++;
+                    printf("Adicionado com Sucesso!! %d\n",conta);
                 } else {
                     printf("Erro ao Adicionar!!\n");
                 }
