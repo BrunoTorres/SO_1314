@@ -262,12 +262,13 @@ void hand_chld(int s){
                 printf("O Filho %s com o pid %d Reiniciou!\n", aux->nome,getpid());
                 char linha_lista[BUFSIZ]; // Linha TXT
                 char *caminho[10];
-                char *saveptr;
+                char *saveptr; //strtok_r
                 char path[BUFSIZ]; // TXT
                 char *nome = strdup(aux->nome);
                 int valor,f_cts,f_fdin;
                 char f_myfifo[BUFSIZ];
                 char f_buf[BUFSIZ]; // String Recebida
+                char str[BUFSIZ]; // String Escrita File
 
                 sprintf(f_myfifo, "/tmp/%s",nome); // PATH Pipe
 
@@ -386,14 +387,9 @@ void hand_chld(int s){
                         } else {
                             addConc(d, caminho[1], atoi(caminho[3]));
                             addFreg(d, caminho[1], caminho[2], atoi(caminho[3]));
-                            write(f_fdin,caminho[0],strlen(caminho[0]));
-                            write(f_fdin,":",1);
-                            write(f_fdin,caminho[1],strlen(caminho[1]));
-                            write(f_fdin,":",1);
-                            write(f_fdin,caminho[2],strlen(caminho[2]));
-                            write(f_fdin,":",1);
-                            write(f_fdin,caminho[3],strlen(caminho[3]));
-                            write(f_fdin,"\n",1);
+                            sprintf(str,"%s:%s:%s:%s\n",caminho[0],caminho[1],caminho[2],caminho[3]);
+                            write(f_fdin,str,strlen(str));
+                            memset(str, 0, sizeof(str));
                             memset(caminho, 0, sizeof(caminho));
                         } 
                     }
@@ -449,6 +445,7 @@ int incrementar(char *nome[], unsigned valor){
             
             char f_myfifo[BUFSIZ];
             char f_file[BUFSIZ];
+            char str[BUFSIZ];
             char *caminho[10];
             char *saveptr;
 
@@ -467,15 +464,9 @@ int incrementar(char *nome[], unsigned valor){
             sprintf(v, "%d", valor);
             addConc(d, nome[1], valor);
             addFreg(d, nome[1], nome[2], valor);
-            write(f_fdin, nome[0], strlen(nome[0]));
-            write(f_fdin,":",1);
-            write(f_fdin, nome[1], strlen(nome[1]));
-            write(f_fdin,":",1);
-            write(f_fdin, nome[2], strlen(nome[2]));
-            write(f_fdin,":",1);
-            write(f_fdin, v, strlen(v));
-            write(f_fdin,"\n",1);
-            
+            sprintf(str,"%s:%s:%s:%d\n",nome[0],nome[1],nome[2],valor);
+            write(f_fdin,str,strlen(str));
+            memset(str, 0, sizeof(str));
             f_cts = open(f_myfifo, O_RDONLY); // Lê do Pipe
             while (1)
             {
@@ -574,18 +565,12 @@ int incrementar(char *nome[], unsigned valor){
                     } else {
                         addConc(d, caminho[1], atoi(caminho[3]));
                         addFreg(d, caminho[1], caminho[2], atoi(caminho[3]));
-                        write(f_fdin,caminho[0],strlen(caminho[0]));
-                        write(f_fdin,":",1);
-                        write(f_fdin,caminho[1],strlen(caminho[1]));
-                        write(f_fdin,":",1);
-                        write(f_fdin,caminho[2],strlen(caminho[2]));
-                        write(f_fdin,":",1);
-                        write(f_fdin,caminho[3],strlen(caminho[3]));
-                        write(f_fdin,"\n",1);
+                        sprintf(str,"%s:%s:%s:%s\n",caminho[0],caminho[1],caminho[2],caminho[3]);
+                        write(f_fdin,str,strlen(str));
+                        memset(str, 0, sizeof(str));
                         memset(caminho, 0, sizeof(caminho));
                     } 
                 }
-                
                 memset(f_buf, 0, sizeof(f_buf));
                 
             }
@@ -617,6 +602,7 @@ int agregar(char *prefixo[], unsigned nivel, char *path){
         }
     }
     write(n_mtf, msg, strlen(msg));
+    memset(msg, 0, sizeof(msg));
     close(n_mtf);
     return 0;
 }
@@ -651,7 +637,6 @@ int main(int argc, char const *argv[]){
     int cts;
     char *myfifo = "/tmp/cts";
     char buf[BUFSIZ];
-    int fdin;
     char *t,*r;
     
     filhos = malloc(sizeof(filho));
@@ -660,8 +645,6 @@ int main(int argc, char const *argv[]){
     
     signal(SIGINT,hand_int); //Control-C
     mkfifo(myfifo, 0666); // Pipe Cliente to Server
-    
-    fdin = open("log.txt",O_APPEND | O_TRUNC | O_WRONLY,0666);
     
     cts = open(myfifo, O_RDONLY);
     while (1)
@@ -735,7 +718,6 @@ int main(int argc, char const *argv[]){
     }
     
     close(cts);
-    close(fdin);
     
     return 0;
 }
