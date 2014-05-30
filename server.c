@@ -230,13 +230,13 @@ void hand_chld(int s){
             // CRIAR FILHO DE NOVO
             if ((pid=fork())==0){
                 printf("O Filho %s com o pid %d Reiniciou!\n", aux->nome,getpid());
-                char linha_lista[100]; // Linha TXT
+                char linha_lista[BUFSIZ]; // Linha TXT
                 char *caminho[10];
                 char *saveptr;
-                char path[40]; // TXT
+                char path[BUFSIZ]; // TXT
                 char *nome = strdup(aux->nome);
                 int valor,f_cts,f_fdin;
-                char f_myfifo[40];
+                char f_myfifo[BUFSIZ];
                 char f_buf[BUFSIZ]; // String Recebida
 
                 sprintf(f_myfifo, "/tmp/%s",nome); // PATH Pipe
@@ -247,7 +247,7 @@ void hand_chld(int s){
                 initDist(d,nome);
                 sprintf(path, "/tmp/%s.txt",nome);
                 FILE *file_lista= fopen(path, "r");
-                while (fgets(linha_lista, 100, file_lista)){
+                while (fgets(linha_lista, BUFSIZ, file_lista)){
                     normaliza(linha_lista);
                     caminho[0] = strtok_r(linha_lista,":", &saveptr);
                     caminho[1] = strtok_r(NULL,":", &saveptr);
@@ -271,13 +271,12 @@ void hand_chld(int s){
                         caminho[3] = strtok_r(NULL,":", &saveptr);
                         caminho[4] = strtok_r(NULL,":", &saveptr);
                         caminho[5] = strtok_r(NULL,":", &saveptr);
-                    //printf("0-|%s| 1-|%s| 2-|%s| 3-|%s| 4-|%s| 5-|%s| \n", caminho[0], caminho[1], caminho[2],caminho[3],caminho[4],caminho[5]);
+                        
                         if(strcmp(caminho[0],"agregar")==0){
                             dist *aux = d;
                             int n_path;
                             int nivel;
                             char *path2;
-                        //printf("ANTES DE\n");
 
                             if (caminho[3]){
                                 nivel = atoi(caminho[2]);
@@ -294,40 +293,32 @@ void hand_chld(int s){
                             }
 
                             path2=ajudasemPrint(path2);
-                        //printf("CHEGUEI!!! PATH: %s\n",path);
 
                             n_path = open(path2,O_CREAT | O_TRUNC | O_WRONLY ,0666);
-                        //printf("OPEEEENNNNN\n");
+
                             conc *aux2 = aux->concelhos;
                             if (strcmp(aux->nome,"") != 0) {
-                           // printf("NOME DISTRITO %s\n",aux->nome);
-                            //printf("Nº Casos Distrito %d\n",aux->d_n_casos);
                                 if (nivel == 0){
-                                    char str[80];
+                                    char str[BUFSIZ];
                                     sprintf(str,"%s:%d\n",aux->nome,aux->d_n_casos);
                                   //  printf("MSG|%s|\n", str);
                                     write(n_path,str,strlen(str));
                                 }
                             }
+
                             while (aux2){
                                 if (strcmp(aux2->nome,"") != 0) {
-                                //printf("\tNOME CONCELHO %s\n",aux2->nome);
-                                //printf("\tNº Casos Concelho %d\n",aux2->c_n_casos);
-                                //printf("NIVEL: %d\n", nivel);
                                     if (nivel == 1){
-                                        char str[80];
+                                        char str[BUFSIZ];
                                         sprintf(str,"%s:%s:%d\n",aux->nome,aux2->nome,aux2->c_n_casos);
-                                  //  printf("MSG|%s|\n", str);
                                         write(n_path,str,strlen(str));
                                     }
                                 }
                                 freg *aux3 = aux2->freguesias;
                                 while (aux3) {
                                     if (strcmp(aux3->nome,"") != 0) {
-                                   // printf("\t\tNOME FREGUESIA %s\n",aux3->nome);
-                                   // printf("\t\tNº Casos Freguesia %d\n",aux3->f_n_casos);
                                         if ((nivel == 2) && ((strcmp(aux2->nome,caminho[2])==0) || (atoi(caminho[2]) !=0))) {
-                                            char str[80];
+                                            char str[BUFSIZ];
                                             sprintf(str,"%s:%s:%s:%d\n",aux->nome,aux2->nome,aux3->nome,aux3->f_n_casos);
                                             write(n_path,str,strlen(str));
                                         }
@@ -336,7 +327,6 @@ void hand_chld(int s){
                                 }
                                 aux2 = aux2->next;
                             }
-                        //printf("\n");
                             close(n_path);
 
                         } else if (strcmp(caminho[0],"lista")==0){
@@ -409,9 +399,9 @@ int incrementar(char *nome[], unsigned valor){
     
     // Existe um Filho com o Distrito
     if (aux) {
-        char fifo[20];
+        char fifo[BUFSIZ];
         sprintf(fifo, "/tmp/%s",aux->nome);
-        char v[100];
+        char v[BUFSIZ];
         int stf;
         sprintf(v,"%s:%s:%s:%d",nome[0],nome[1],nome[2],valor);
         stf = open(fifo, O_WRONLY);
@@ -423,13 +413,12 @@ int incrementar(char *nome[], unsigned valor){
         // Cria Filho
         if ((pid=fork())==0) {
             // FILHO
-           // printf("Init Child: %s\n",nome[0]);
             int f_cts;
             int f_fdin;
             char f_buf[BUFSIZ]; // String Recebida
             
-            char f_myfifo[20];
-            char f_file[20];
+            char f_myfifo[BUFSIZ];
+            char f_file[BUFSIZ];
             char *caminho[10];
             char *saveptr;
 
@@ -469,7 +458,6 @@ int incrementar(char *nome[], unsigned valor){
                     caminho[3] = strtok_r(NULL,":", &saveptr);
                     caminho[4] = strtok_r(NULL,":", &saveptr);
                     caminho[5] = strtok_r(NULL,":", &saveptr);
-                    //printf("0-|%s| 1-|%s| 2-|%s| 3-|%s| 4-|%s| 5-|%s| \n", caminho[0], caminho[1], caminho[2],caminho[3],caminho[4],caminho[5]);
                     if(strcmp(caminho[0],"agregar")==0){
                         dist *aux = d;
                         int n_path;
@@ -492,16 +480,13 @@ int incrementar(char *nome[], unsigned valor){
                         }
                         
                         path=ajudasemPrint(path);
-                        //printf("CHEGUEI!!! PATH: %s\n",path);
 
                         n_path = open(path,O_CREAT | O_TRUNC | O_WRONLY ,0666);
-                        //printf("OPEEEENNNNN\n");
+                        
                         conc *aux2 = aux->concelhos;
                         if (strcmp(aux->nome,"") != 0) {
-                           // printf("NOME DISTRITO %s\n",aux->nome);
-                            //printf("Nº Casos Distrito %d\n",aux->d_n_casos);
-                            if (nivel == 0){
-                                char str[80];
+                           if (nivel == 0){
+                                char str[BUFSIZ];
                                 sprintf(str,"%s:%d\n",aux->nome,aux->d_n_casos);
                                   //  printf("MSG|%s|\n", str);
                                 write(n_path,str,strlen(str));
@@ -509,11 +494,8 @@ int incrementar(char *nome[], unsigned valor){
                         }
                         while (aux2){
                             if (strcmp(aux2->nome,"") != 0) {
-                                //printf("\tNOME CONCELHO %s\n",aux2->nome);
-                                //printf("\tNº Casos Concelho %d\n",aux2->c_n_casos);
-                                //printf("NIVEL: %d\n", nivel);
                                 if (nivel == 1){
-                                    char str[80];
+                                    char str[BUFSIZ];
                                     sprintf(str,"%s:%s:%d\n",aux->nome,aux2->nome,aux2->c_n_casos);
                                   //  printf("MSG|%s|\n", str);
                                     write(n_path,str,strlen(str));
@@ -522,10 +504,8 @@ int incrementar(char *nome[], unsigned valor){
                             freg *aux3 = aux2->freguesias;
                             while (aux3) {
                                 if (strcmp(aux3->nome,"") != 0) {
-                                   // printf("\t\tNOME FREGUESIA %s\n",aux3->nome);
-                                   // printf("\t\tNº Casos Freguesia %d\n",aux3->f_n_casos);
-                                    if ((nivel == 2) && ((strcmp(aux2->nome,caminho[2])==0) || (atoi(caminho[2]) !=0))) {
-                                        char str[80];
+                                   if ((nivel == 2) && ((strcmp(aux2->nome,caminho[2])==0) || (atoi(caminho[2]) !=0))) {
+                                        char str[BUFSIZ];
                                         sprintf(str,"%s:%s:%s:%d\n",aux->nome,aux2->nome,aux3->nome,aux3->f_n_casos);
                                         write(n_path,str,strlen(str));
                                     }
@@ -594,8 +574,8 @@ int incrementar(char *nome[], unsigned valor){
 // Agrega
 int agregar(char *prefixo[], unsigned nivel, char *path){
     int n_mtf;
-    char mtf[20];
-    char msg[60];
+    char mtf[BUFSIZ];
+    char msg[BUFSIZ];
     sprintf(mtf, "/tmp/%s",prefixo[1]); // PATH Pipe
     n_mtf = open(mtf, O_WRONLY);
     sprintf(msg,"%s:%s:%d:%s",prefixo[0],prefixo[1],(int)nivel,path);
@@ -630,7 +610,7 @@ void hand_int(int s){
 // Envia Mensagem ao Filho
 void mensagem (char *filho, char *msg){
     int n_mtf;
-    char mtf[20];
+    char mtf[BUFSIZ];
     sprintf(mtf, "/tmp/%s",filho); // PATH Pipe
     n_mtf = open(mtf, O_WRONLY);
     write(n_mtf, msg, sizeof(msg));
@@ -715,9 +695,7 @@ int main(int argc, char const *argv[]){
                 //TRIM ' '
                 if (agrega[2] && (agrega[2][0] == ' ')) agrega[2] = tira(agrega[2]);
                 if (agrega[3] && (agrega[3][0] == ' ')) agrega[3] = tira(agrega[3]);
-                //tira(valor);
                 nivel = atoi(valor);
-                //printf("AGREGARRRRRRR 0-|%s| 1-|%s| 2-|%s| 3-|%s| 4-|%s| Valor=%d\n",agrega[0],agrega[1],agrega[2],agrega[3],agrega[4],nivel);
                 agregar(agrega,nivel,path);
             }
 
