@@ -1,0 +1,22 @@
+server.c - Codigo Fonte Servidor
+contagem.c - Codigo Fonte API
+contagem.o - API Compilada
+
+Teste/:
+
+teste_bv_30k.c - Codigo Fonte Teste Distrito Braga e Viana com 30 mil pedidos ao servidor
+teste_bv_int.c - Codigo Fonte Teste Distrito Braga e Viana com intervalos de 1 segundo
+teste_fp_30m.c - Codigo Fonte Teste Distrito Faro e Porto com 300 mil pedidos ao servidor
+teste_fp_inc.c - Codigo Fonte Teste Distrito Faro e Porto com intervalos de 1 segundo
+
+Exemplo de linkagem de um teste com a API:
+
+gcc -o teste_bv_30k contagem.o teste_bv_30k.c 
+
+Extra:
+client.c - Codigo Fonte para comunicar com o servidor directo sem API (Utilizado unicamente por nos para testes)
+
+Exemplos
+
+> lista Braga (Mostra a estrutura do Distrito de Braga)
+> filhos (Mostra a estutura dos filhos (Distritos))
