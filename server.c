@@ -433,6 +433,8 @@ int incrementar(char *nome[], unsigned valor){
         stf = open(fifo, O_WRONLY);
         write(stf, v, sizeof(v));
         memset(v, 0, sizeof(v));
+        close(stf);
+
     } else {
         // Não existe Filho com o Distrito
         int pid;
@@ -448,7 +450,6 @@ int incrementar(char *nome[], unsigned valor){
             char str[BUFSIZ];
             char *caminho[10];
             char *saveptr;
-
             sprintf(f_file,"/tmp/%s.txt",nome[0]); // PATH TXT
             sprintf(f_myfifo, "/tmp/%s",nome[0]); // PATH Pipe
             
@@ -652,6 +653,7 @@ int main(int argc, char const *argv[]){
         read(cts, buf, BUFSIZ);
         if (strcmp(buf,"")>0){
             normaliza(buf);
+            printf("SERVER: |%s|\n", buf);
             if(buf[0]=='['){
                 tira(buf);
                 char *saveptr;

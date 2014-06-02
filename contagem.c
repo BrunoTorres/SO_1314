@@ -14,6 +14,7 @@ int incrementar(char *nome[], unsigned valor){
 	cts = open(myfifo, O_WRONLY);
 	sprintf(str,"[%s,%s,%s] %d",nome[0],nome[1],nome[2],(int)valor);
 	write(cts, str, sizeof(str));
+	printf("API: |%s|\n", str);
 	memset(str, 0, sizeof(str));
 	close(cts);
 	return 0;
