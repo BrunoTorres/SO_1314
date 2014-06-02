@@ -1,0 +1,44 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1265\cocoasubrtf200
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural
+
+\f0\fs24 \cf0 O servidor verifica a exist\'eancia de um processo filho, respons\'e1vel pela distrito, consultando a estrutura de filhos existente.\
+Caso n\'e3o exista ainda um filho respons\'e1vel pelo distrito introduzido, ele ira criar o respectivo filho que ficara respons\'e1vel pelos dados desse distrito.\
+O servidor poder\'e1 responder as seguintes opera\'e7\'f5es:\
+\
+* Incrementar\
+\
+Envia para o processo filho respons\'e1vel pelo distrito o respectivo comando.\
+\
+* Agregar\
+\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural
+\cf0 Envia para o processo filho respons\'e1vel pelo distrito o respectivo comando.\
+\
+* Lista [distrito]\
+\
+Envia para o processo filho respons\'e1vel pelo distrito o respectivo comando, acaso n\'e3o seja introduzido o distrito, envia para todos os processos filhos o comando lista\
+\
+* Filhos\
+\
+Mostra a estrutura \'93Filhos\'94 onde est\'e3o guardados todos os processos filhos criados pelo servidor para gerir os respectivos distritos.\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural
+\cf0 \
+\
+Toda a comunica\'e7\'e3o existente entre o servidor e o processo filho \'e9 efectuada atrav\'e9s de um named pipe, com o nome desse distrito.\
+Os filhos ficam a espera de opera\'e7\'f5es, que ser\'e3o transmitidas pelo servidor.\
+Aquando da rece\'e7\'e3o dessa opera\'e7\'e3o, ser\'e1 verificada qual a procedimento a ser realizado, entre as seguintes op\'e7\'f5es:\
+\
+* Incrementar\
+\
+Processo atrav\'e9s do qual \'e9 incrementado um contador na estrutura de dados e guardado no ficheiro respectivo a esse filho.\
+\
+* Agregar\
+\
+Processo atrav\'e9s do qual \'e9 agrupada um conjunto de informa\'e7\'f5es conforme os par\'e2metro introduzidos pelo cliente.\
+\
+* Listar\
+\
+Apresenta a estrutura actual do distrito.}

@@ -694,8 +694,7 @@ int main(int argc, char const *argv[]){
                     printf("Erro ao Adicionar!!\n");
                 }
                 
-            } 
-            if (strcmp(buf,"filhos") == 0) {
+            } else if (strcmp(buf,"filhos") == 0) {
                 filho *aux = filhos;
                 while (aux){
                     if (strcmp(aux->nome,"")!=0){
@@ -705,8 +704,11 @@ int main(int argc, char const *argv[]){
                     }
                     aux = aux->next;
                 }
-            }
-            if (strcmp(buf,"lista") == 0) {
+            } else if ((buf[0] == 'l') && (buf[1] == 'i')) {
+                t = strtok_r(buf," ",&r);
+                if (r && t && strcmp(t,"lista") == 0) {
+                    mensagem(r,"lista");
+                } else {                
                 filho *aux = filhos;
                 while (aux){
                     if (strcmp(aux->nome,"")!=0){
@@ -714,9 +716,10 @@ int main(int argc, char const *argv[]){
                     }
                     aux = aux->next;
                 }
-            }
+                }
+            } else if ((buf[0] == 'a') && (buf[1] == 'g')) {
             t = strtok_r(buf," ",&r);
-            if (strcmp(t,"agregar") == 0) {
+            if (r && t && strcmp(t,"agregar") == 0) {
                 char *agrega[20];
                 char *valor,*aux,*path;
                 char *resto;
@@ -736,6 +739,9 @@ int main(int argc, char const *argv[]){
                 nivel = atoi(valor);
                 agregar(agrega,nivel,path);
             }
+        } else {
+            printf("COMANDO ERRADO!!\n");
+        }
 
         }
         memset(buf, 0, sizeof(buf));
