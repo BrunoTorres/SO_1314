@@ -52,6 +52,25 @@ char * ajudasemPrint(char* nome){
     return  nome;
 }
 
+// SIGPIPE
+void hand_pipe(int s){
+    if (s == SIGPIPE){
+        /*
+        filho *aux = filhos;
+        aux = aux->next;
+        while(aux){
+            if(strcmp(aux->nome,"")!=0){
+                printf("\nKILL :: Filho %s com o PID %d\n",aux->nome,aux->pid);
+                kill(aux->pid,9);
+            }
+            aux = aux->next;
+        }
+        */
+        printf("ERRROOOOOOO SIGPIPE\n");
+    }
+    //exit(0);
+}
+
 // Inicializa Filho
 void initFilho(filho *d){
     d->nome = "";
@@ -430,6 +449,7 @@ int incrementar(char *nome[], unsigned valor){
         char v[BUFSIZ];
         int stf;
         sprintf(v,"%s:%s:%s:%d",nome[0],nome[1],nome[2],valor);
+        //printf("|%s|\n", v);
         stf = open(fifo, O_WRONLY);
         write(stf, v, sizeof(v));
         memset(v, 0, sizeof(v));
@@ -537,6 +557,7 @@ int incrementar(char *nome[], unsigned valor){
                             aux2 = aux2->next;
                         }
                         //printf("\n");
+                        printf("%d FIM AGREGAR\n",conta);
                         close(n_path);
 
                     } else if (strcmp(caminho[0],"lista")==0){
@@ -602,7 +623,7 @@ int agregar(char *prefixo[], unsigned nivel, char *path){
             sprintf(msg,"%s:%s:%s:%d:%s",prefixo[0],prefixo[1],prefixo[2],(int)nivel,path);
         }
     }
-    write(n_mtf, msg, strlen(msg));
+    write(n_mtf, msg, BUFSIZ);
     memset(msg, 0, sizeof(msg));
     close(n_mtf);
     return 0;
@@ -645,6 +666,7 @@ int main(int argc, char const *argv[]){
     initFilho(filhos); //Inicializar
     
     signal(SIGINT,hand_int); //Control-C
+    signal(SIGPIPE,hand_pipe); //Control-C
     mkfifo(myfifo, 0666); // Pipe Cliente to Server
     
     cts = open(myfifo, O_RDONLY);
@@ -653,7 +675,7 @@ int main(int argc, char const *argv[]){
         read(cts, buf, BUFSIZ);
         if (strcmp(buf,"")>0){
             normaliza(buf);
-            printf("SERVER: |%s|\n", buf);
+            //printf("SERVER: |%s|\n", buf);
             if(buf[0]=='['){
                 tira(buf);
                 char *saveptr;
@@ -667,7 +689,7 @@ int main(int argc, char const *argv[]){
                 
                 if (incrementar(caminho,atoi(valor))==0){
                     conta++;
-                    printf("Adicionado com Sucesso!! %d\n",conta);
+                    //printf("Adicionado com Sucesso!! %d\n",conta);
                 } else {
                     printf("Erro ao Adicionar!!\n");
                 }

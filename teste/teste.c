@@ -25,12 +25,26 @@ int main(int argc, char const *argv[])
 		incrementar(nomes_v,valor);
 		incrementar(nomes_v2,valor);
 		incrementar(nomes_aux,valor);
-		//agregar(nomes2,0,"viana_estupido.txt");
+		agregar(nomes2,0,"viana_estupido.txt");
 		//alarm(5);
 		//pause();
 		num++;
 	}
 	agregar(nomes2,2,"viana.txt");
 	agregar(nomes3,2,"braga.txt");
+	num=0;
+	while (num< 400){
+		incrementar(nomes,valor);
+		incrementar(nomes_v,valor);
+		incrementar(nomes_v2,valor);
+		agregar(nomes3,1,"braga_estupido.txt");
+		incrementar(nomes_aux,valor);
+		//agregar(nomes3,1,"braga_estupido.txt");
+		//alarm(5);
+		//pause();
+		num++;
+	}
+	agregar(nomes2,2,"viana2.txt");
+	agregar(nomes3,2,"braga2.txt");
 	return 0;
 }
