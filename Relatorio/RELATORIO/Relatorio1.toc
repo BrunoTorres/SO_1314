@@ -1,0 +1,7 @@
+\select@language {portuguese}
+\contentsline {section}{\numberline {1}Objectivos}{2}
+\contentsline {section}{\numberline {2}Estrutura da aplica\IeC {\c c}\IeC {\~a}o}{2}
+\contentsline {subsection}{\numberline {2.1}Servidor}{4}
+\contentsline {subsubsection}{\numberline {2.1.1}Estrutura do Servidor}{5}
+\contentsline {section}{\numberline {3}Testes Efectuados}{5}
+\contentsline {section}{\numberline {4}Conclus\IeC {\~a}o}{5}

@@ -1,0 +1,366 @@
+\documentclass[10pt,notitlepage]{article}
+\usepackage{graphicx}
+\usepackage{verbatim}
+\usepackage[portuguese]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[hmargin=2cm,vmargin=3.5cm,bmargin=2cm]{geometry}
+
+\begin{document}
+
+%%%CAPA%%%
+\begin{titlepage}
+
+\begin{center}
+ 
+
+\begin{figure}
+\centering
+\includegraphics[scale=0.5]{logo.pdf}
+\end{figure}
+
+
+
+
+
+Escola de Engenharia \\  Departamento de Informática \\ Licenciatura em Engenharia Informática \\~\\~  \\~ \\~ \\~ \\~ \\
+ %%%\author{Bruno Pereira  \and \\Miguel Guimaraes \and \\João Mano}%%%
+
+
+
+{\Huge Projecto Linguagem C\\~\\}
+Laboratórios de Informática III \\
+  \vfill
+  
+ 
+
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.6]{autores.png}
+\caption{Autores (a),(b),(c)}
+\end{figure}
+
+\vspace{1.5cm}
+ \begin{flushleft}  Autores: \\
+ \textbf{(a)Bruno Pereira\hspace{35pt} Número:69303\\(b)Miguel Guimarães \hspace{9pt}   Número:66822\\(c)João Mano \hspace{48pt}           Número:69854\\}
+ %%\date{Abril 2014}%%
+\end{flushleft}
+
+ \vspace{0.8cm}
+ Data Abril 2014
+\end{center}
+
+\end{titlepage}
+
+
+
+
+\tableofcontents
+
+\newpage
+
+%%%Estrutura%%%
+
+\section{Estrutura da aplicação}
+
+
+
+\subsection{Módulos}
+
+\begin{itemize} 
+\item Main - Módulo central. Faz o parser dos ficheiros,inicializa as estruturas e invoca os módulos Estatisticas, IndiceAutores e RedeAutores.
+
+É na função main() que são declaradas as estruturas e inicializadas recorrendo as funçoes init existentes em cada módulo, de seguida inicia-se o processamento do ficheiro recorrendo a função processaFicheiro(),é aqui onde se realiza o parser do ficheiro linha a linha e onde vão sendo preenchidas as estruturas de cada módulo com a ajuda de um array auxiliar.
+Depois de termos lido o ficheiro nesse momento é aprensentada uma interface grafica:
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.5]{imagemMenu.jpg}
+\caption{Menu Principal}
+\end{figure}
+
+Neste momento o utilizador pode escolher a opcção pertendida e consoante a opcção escolhida o menu vai chamar a função auxiliar correspondente,por exemplo se escolher a query 3, o menu vai chamar a função chamaPergunta3(*rede) que por sua vez vai tratar de responder ao pedido usando a API do modulo RedeAutores e fazendo depois os prints para o ecra necessarios.
+
+
+
+
+\item IndiceAutores - Contém a estrutura de dados que guarda os nomes de todos os autores organizados por índice alfabético.
+	\begin{itemize} 
+	\item[-]Devolve uma istancia do tipo IndiceAutores vazia;\begin{verbatim}IndiceAutores initIndice();\end{verbatim}
+	\item[-]Devolve um IndiceAuntores depois de inserir um autor num struc IndiceAutores passados como arguementos;\begin{verbatim}IndiceAutores insereIndiceAutores (char *nome, IndiceAutores* ind);\end{verbatim}
+	\item[-]Devolve o maior de todos os nomes;\begin{verbatim}char* getMaiorNome();\end{verbatim}
+	\item[-]Devolve o menor de todos os nomes;\begin{verbatim}char* getMenorNome();\end{verbatim}
+	\item[-]Devolve o numero de autores com nomes diferentes;\begin{verbatim}int getAutoresDistintos();\end{verbatim}
+	\item[-]Devolve o comprimento medio do nome de todos os autorres;\begin{verbatim}float getMediaNomes();\end{verbatim}
+	\item[-]Preenche um array passado como argumento, com os nomes da ABin dada, ordenadamente;\begin{verbatim}void preencheArrayAutores (int *i, arrayNomes array, char c, IndiceAutores ind);\end{verbatim}
+	\end{itemize}
+
+\item Estatistica - Contém a estrutura que guarda as a informações que relacionam anos e número de publicações.
+	\begin{itemize} 
+	\item[-]Inicializa Estatistica devolve uma variavel Estatistica vazia\begin{verbatim}Estatistica initMatriz();\end{verbatim}
+	\item[-]Dado um ano e um numero de autores, incrementa num valor, o número de publicações na estrutura\begin{verbatim}Estatistica insereStats (int ano, int numAutores, Estatistica *e);\end{verbatim}
+	\item[-]Recebe um nome e e um ano cria um ficheiro .txt com esse nome e grava o total de publicaçoes de 1,2 e 3 autores nesse ano \begin{verbatim}void tabelaTotalAutores (char *ficheiro, int ano, Estatistica e);\end{verbatim}
+	\item[-]Recebe um nome e cria um ficheiro .csv com esse nome e grava o total de publicaçoes dividido por numero de autores e por ano\begin{verbatim}void tabelaTotalAutoresCSV (char *ficheiro, Estatistica e);\end{verbatim}
+	\item[-]Devolve o ano que esta à cabeça da lista\begin{verbatim}int getAno (Lista pt);\end{verbatim}
+	\item[-]Devolve o contador que esta à cabeça da lista\begin{verbatim}int getContador (Lista pt);\end{verbatim}
+	\item[-]Avança para a proxima posiçao de uma lista\begin{verbatim}void avancaLista (Lista *pt);\end{verbatim}
+	\item[-]Dado uma Estatistica, devolve a lista associada\begin{verbatim}Lista getLista (Estatistica e); \end{verbatim}
+	\item[-]Dado uma Estatistica e uma posição (dois inteiros), devolve o conteúdo dessa posição\begin{verbatim}int getPosicao (Estatistica e, int i, int j);\end{verbatim}
+	\end{itemize}
+
+\item RedeAutores - Contém a estrutura de dados que guarda as informações quantitativa do total de artigos de um dado autor (por ano), e dos relacionamentos existentes entre autores.
+	\begin{itemize} 
+	\item[-]Insere uma linha (composta por autores e um ano) na RedeAutores e devolve a RedeAutores modificada \begin{verbatim}RedeAutores insereRedeAutores (RedeAutores* rede, char* linha[], int numeroAutores); \end{verbatim}
+	\item[-]Inicaliza uma variavel do tipo RedeAutores e retorna-a NULL \begin{verbatim}RedeAutores initRedeAutores ();\end{verbatim}
+	\item[-]Calcula o número de publicações de um autor ,dado um ano.Devolve -1 se não encontrar o nome, caso contrário devolve o nº de publicações do autor \begin{verbatim}int pergunta3 (RedeAutores rede, char*nome, int ano); \end{verbatim}
+	\item[-]Devolve o número total de autores que nunca publicaram com outros autores \begin{verbatim}int pergunta4 (RedeAutores rede); \end{verbatim}
+	\item[-]Devolve um array de inteiros, com o nº de publicações do autor por ano, ou  NULL caso nao encontre o nome na RedeAutores \begin{verbatim}int* pergunta5 (RedeAutores rede, char* nome); \end{verbatim}
+	\item[-]Dado um nome, devolve um array com os nomes dos autores com quem mais publicou Caso nao encontre o nome, devolve NULL \begin{verbatim}char** pergunta8 (RedeAutores rede, char* nome); 
+\end{verbatim}
+	\item[-]Devolve um array com os nomes dos autores que publicaram em todos os anos num dado intrevalo passado por argumento \begin{verbatim}char** pergunta9 (RedeAutores rede, int anoIni, int anoFim); \end{verbatim}
+	\item[-]Devolve uma lista de tamanho n com os autores com mais publicaçoes por ordem crescente de numero de publicaçoes,dado um ano e um tamanho n \begin{verbatim}Lista12 pergunta12 (RedeAutores rede, int ano, int n); \end{verbatim}
+	\item[-]Calcula a percentagem de publicações de um autor de um dado ano relativamente ao total de publicações desse ano,devolve -1 caso nao encontre o nome na RedeAutores \begin{verbatim}double pergunta13 (RedeAutores rede, char* nome,int ano); \end{verbatim}
+	\item[-]Função usada para avançar nodo da lista12\begin{verbatim}void avancaLista12 (Lista12 *lista); \end{verbatim}
+	\item[-]Devolve o nome que esta a cabeça da lista\begin{verbatim}char* getNomeLista12 (Lista12 *lista); \end{verbatim}
+	\item[-]Devolve o numero de publicaçoes do nome que esta a cabeça da lista \begin{verbatim}int getNPubsLista12 (Lista12 *lista);\end{verbatim}
+	\item[-]Liberta a memória ocupada por uma lista12 existente \begin{verbatim}void freeLista12(Lista12 *lista);\end{verbatim}
+	\end{itemize}
+	
+\item HashFunction - Função de hashing para a estrutura do módulo RedeAutores.
+	\begin{itemize} 
+	\item[-] \begin{verbatim}ub4 hash(register ub1 *k,register ub4 length, register ub4 initval);\end{verbatim}
+	\end{itemize}
+\end{itemize}
+
+
+
+
+
+%%% Modularidade %%%
+
+\section{Modularidade}
+\begin{itemize}
+\item Encapsulamento - O encapsulamento foi alcançado, pois nenhum dos módulos conhece a 
+implementação das funções dos outros módulos nem as suas estruturas de dados.
+\item Abstração de dados -Todas as estruturas de dados são privadas, ou seja não sao acessiveis fora de cada módulo,apenas as funções dentro do módulo podem aceder a estrutura,estando assim as estruturas protegidas. Assim, pode-se alterar os módulos mantendo a sua funcionalidade, desde que a API se mantenha.
+\end{itemize}
+\newpage
+%%% Estruturas de Dados %%%
+
+\section{Estruturas de Dados}
+\subsection{Estatistica}
+\subsubsection{Estrutura}
+
+Para o módulo Estatística decidimos utilizar uma estrutura que consiste num apontador para uma matriz de inteiros para processar cerca de 99\% das publicações e num outro apontador para uma estrutura auxiliar para os restantes casos.
+
+A matriz tem 46 linhas [0 … 45] por 10 colunas [0 … 9]. As 46 linhas representam o número de anos em que houve publicações enquanto as colunas representam o número de autores nas publicações, sendo que a coluna 9 está reservada para uma flag de forma a sabermos se num dado ano existem publicações com 10 ou mais autores.
+
+A estrutura auxiliar escolhida foi uma lista ligada na qual cada nodo tem o ano (ano), número de autores (N\_Autores), um contador para contar quantas publicações existem(contador). Cada nodo, representa o número de publicações de um ano com o mesmo número de autores. Esta lista apenas vai conter dados em que o número de autores seja maior ou igual a 10 (~ 1\% das publicações)
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.5]{estatistica.png}
+\caption{Desenho da estrutura da dados para o módulo Estatistica}
+\end{figure}
+
+Escolhemos esta estrutura pois em cerca de 99\% dos casos permite um acesso imediato aos dados, sendo assim possível responder às questões que dependem deste módulo de forma bastante eficiente.
+Nos casos que ficam de fora destes 99\%, tendo em conta que a lista está ordenada por ano e pelo número de autores, e que, quando é percorrida para acesso aos dados, nunca perdemos a posição onde estamos, percorrê-la é igualmente eficiente pois apenas é percorrida uma vez.
+\newpage
+\subsubsection{Declaração dos tipos de dados no Estatisticas.h}
+
+
+\begin{verbatim}typedef struct sLista* Lista, NodoLista; \end{verbatim}
+\begin{verbatim}typedef struct stats*  Estatistica, Stats; \end{verbatim}
+O ficheiro Estatistica.h contém os protótipos das funções e não faz referências as structs sLista e stats,pois pretendemos que elas sejam privadas, e assim apenas acessiveis do exterior , seja para consulta seja para inserir através destas funções da API( RedeAutores.h), garantindo assim o encapsulamento.
+
+
+
+\subsection{Declaração dos tipos de dados no Estatisticas.c}
+\begin{verbatim}
+typedef struct sLista {    
+    int    ano; 
+    int    N_Autores; 
+    int    contador; 
+    struct sLista *next; 
+} *Lista, NodoLista; 
+\end{verbatim}
+\begin{verbatim}
+typedef struct stats{ 
+    int   artigos[Max_Anos][Max_Autores]; 
+    Lista casos; 
+} *Estatistica, Stats; 
+\end{verbatim}
+
+
+
+\subsection{IndiceAutores}
+\subsubsection{Estrutura}
+
+A estrutura IndiceAutores é um apontador para um array de AVL's de strings com 27 posições.
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.45]{indiceAutores.png}
+\caption{Desenho da estrutura da dados para o módulo IndiceAutores}
+\end{figure}
+
+Cada posição do array representa uma letra, ou seja a posição 0 corresponde aos nomes dos autores começados pela letra 'A' e a posição 26 corresponde aqueles começados pela letra 'Z',sobra uma posição no array onde estão inseridos todos aqueles nomes que começam por algum caractere especial.
+Cada nodo de cada avl cont em a sua altura, para balancear a árvore, o nome do autor e o seu respectivo comprimento.
+As avl's são inicialmente vazias e a inserção nas mesmas é ordenada e posteriormente balanceada, o que permite uma maior eficiência nas operações de busca.
+Foi escolhida esta estrutura de dados porque, apesar de se perder algum tempo no preenchimento da mesma aquando do balanceamento das avl's, somos compensados no tempo de ordenação dos nomes e  temos um acesso directo a avl que contem todos os nomes começados por uma dada letra.
+
+
+
+\subsection{Declaração dos tipos de dados no IndiceAutores.h}
+\begin{verbatim}
+typedef struct structAutores* IndiceAutores, Autores; 
+typedef char*  arrayNomes[MAX_ARRAY];
+\end{verbatim}
+O ficheiro IndiceAutores.h contém os protótipos das funções e não faz referência as variáveis globais   tais como maiorNome e   menorNome nem a struct sABin, pois pretendemos que elas sejam privadas, e assim apenas acessiveis do exterior , seja para consulta seja para inserir através destas funções da API( IndiceAutores.h), garantindo assim o encapsulamento.
+\subsection{Declaração dos tipos de dados no IndiceAutores.c}
+\begin{verbatim}
+typedef struct sABin { 
+	char*  nome; 
+    int    comp; 
+	int    altura; 
+	struct sABin *esq, *dir; 
+} *ABin, Nodo; 
+
+typedef struct structAutores { 
+    Nodo *indAutores[MAX_LETTERS]; 
+} *IndiceAutores, Autores;
+\end{verbatim}
+
+
+\subsection{RedeAutores}
+\subsubsection{Estrutura}
+
+A estrutura RedeAutores é um apontador  para uma HashTable com 190763 posições (número primo), cada posição contém o nome do autor, um array de 46 posições em que cada posição corresponde a um ano,contendo o número de publicaçoes do autor nesse ano,e uma struct listacoautores.
+Cada nodo da struct listacoautores contem um nome(nome de um coautor) e o numero de publicaçoes deste coautor com o autor(nome presente na struct tabela).
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.4]{redeAutores.png}
+\caption{Desenho da estrutura da dados para o módulo RedeAutores}
+\end{figure}
+
+Decidimos escolher esta estrutura pois uma HashTable permite um acesso tendencialmente imediato aos seus dados, o que permite inserir e pesquisar rapidamente.. A função de Hash utilizada foi a “lookup2” de Bob Jenkins, o que nos permitiu minimizar as colisões, mantendo, assim, o acesso tendencialmente imediato.
+A escolha de um array de tamanho fixo, em vez de uma estrutura dinâmica foi  devido ao acesso imediato que permite, em deterimento de alguma memória que possa ser desperdiçada se um autor não publicar em vários anos.
+
+
+\subsection{Declaração dos tipos de dados no RedeAutores.h}
+\begin{verbatim}
+typedef struct lista12        *Lista12, NodoLista12; 
+typedef struct coAutores 	  *RedeAutores;
+\end{verbatim}
+
+O ficheiro RedeAutores.h contém os protótipos das funções e não faz referência as variáveis globais tal como “int pubsEmAno[NUM\_ANOS]” nem as structs listacoautores,coAutores, tabela e lista12, pois pretendemos que elas sejam privadas, e assim apenas acessiveis do exterior , seja para consulta seja para inserir através destas funções da API(RedeAutores.h), garantindo assim o encapsulamento.
+
+\subsection{Declaração dos tipos de dados no IndiceAutores.c}
+\begin{verbatim}
+typedef struct listacoautores 
+{ 
+    char* nome; 
+    int  numeroPublicacoes; 
+    struct listacoautores *next; 
+} *Listacoautores, NodoCoautores; 
+
+typedef struct tabela 
+{ 
+    char* nomeAutor; 
+    int arrayNPublicacoes[NUM_ANOS]; 
+    Listacoautores nomesCoautores; 
+} *Tabela, NodoTabela; 
+
+typedef struct coAutores{ 
+    Tabela hashCoAutores[NUM_HASH]; 
+} *RedeAutores; 
+ 
+typedef struct lista12 
+{ 
+    char* nome; 
+    int  numeroPublicacoes; 
+    struct lista12 *next; 
+} *Lista12, NodoLista12;
+\end{verbatim}
+
+
+%%% Tempos %%%
+
+\section{Performance}
+\subsection{Tempos de Execução}
+Os tempos foram medidos numa máquina com um processador Intel Core-i7 4700MQ @ 2.40 GHz e 4GB RAM, correndo Xubuntu 13.10.
+
+Todos os tempos apresentados são médios e foram obtidos a partir de 5 medições nas mesmas condições, utilizando a biblioteca time.h de acordo com um exemplo fornecido pelo professor.
+
+
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[scale=0.55]{tempoQueries.png}
+\includegraphics[scale=0.40]{tempoProcessaFicheiro.png}
+
+\caption{a) Tempo da função processaFicheiro b) Tempo das queries 8, 9 e 12}
+\end{figure}
+
+
+Analisando os gráficos da figura 5 podemos concluir que, em termos de tempos de acesso, as estruturas foram corretamente escolhidas pois, mesmo aumentando o número de entradas em 4 e 6 vezes relativamente ao ficheiro original, os tempos de resposta às queries não incrementam com a mesma proporção.
+
+Para a medição dos tempos da Query 8 o autor Richard E. Miller foi escolhido aleatoriamente. O tempo médio de 10 nanosegundos obtido no ficheiro publicx\_x6.txt, embora mais baixo que nos outros dois ficheiros, não surpreendeu pois o que altera do ficheiro original para o publicx\_x4.txt e publicx\_x6.txt é apenas o número de publicações, sendo que as mesmas são com os mesmos autores, pelo que os dados introduzidos na estrutura serão os mesmos, fazendo com que os tempos de resposta à Query sejam similares.
+
+A Query 9 é a mais lenta das três queries medidas uma vez que percorre todas as posições ocupadas na HashTable e, em cada uma dessas posições, verifica se esse autor publicou em todos os anos contidos no intervalo dado pelo utilizador. O intervalo de anos escolhido para medir os tempos foi de 2009 a 2013 pois nestes anos está concentrada grande parte das publicações totais.
+
+Na Query 12 a HashTable é, mais uma vez, percorrida na sua totalidade mas, neste caso, apenas é verificado um ano para cada autor, tornando assim esta query mais rápida que a Query 9. Como o número de autores presentes na estrutura é o mesmo em todos os ficheiros, o tempo necessário para a execução do algoritmo praticamente não se altera para os três ficheiros diferentes.
+
+
+
+
+\subsection{Decisões de navegação}
+Decidimos nas queries como resultados mais complexos, como na query 6 e 9, apresentar ao utilizador apenas 24 nomes, podendo o mesmo decidir se quer continuar ou voltar ao menu principal.
+
+
+\begin{figure}[h]
+\begin{center}
+\centering
+\includegraphics[scale=0.5]{query6.png}
+\end{center}
+\caption{Exemplo da opção tomada para a query 6}
+\end{figure}
+
+
+
+
+
+\newpage
+\subsection{Makefile}
+
+\begin{verbatim}
+CFLAGS=-O2
+OBJS=$(patsubst %.c,%.o,$(wildcard *.c))
+LIBS=
+
+gest: $(OBJS)
+    $(CC) $(CFLAGS) -Wall -ansi -o GestAuts $(OBJS) $(LIBS)
+
+limpar:
+    rm GestAuts *.o
+\end{verbatim}
+
+
+\subsection{Grafo de dependências}
+
+\begin{center}
+\begin{figure}[h]
+\centering
+\includegraphics[scale=0.5]{dependencias.png}
+\end{figure}
+
+\end{center}
+
+\section{Conclusão}
+Com a chegada do fim deste relatório chegou a altura de se tecerem as conclusões finais. A necessidade de garantir o encapsulamento dos módulos foi a etapa mais complicada, pois até a este ponto nunca tinhamos sido deparados com essa necessidade, tal como a necessidade de uma implementação protegida e segura de todos os tipos de dados abstratos.
+Apraz-nos dizer que depois da finalização de todo o projeto ficamos a entender o porquê da importancia da correta criação de módulos de dados como devemos seguir as regras de implementação modular.
+O desafio de pensar e posteriormente implementar as estruturas de dados necessárias a cada módulo e as suas respectivas queries foi aliciante, pricipalmente para o último módulo “RedeAutores”, foi algo que nos fez crescer ao nivel de programadores.
+Consideramos que todas as estruturas por nos construidas são bastantes eficazes como se pode confirmar nos graficos nos testes de performance.
+Em termos gerais, consideramos que  o projecto por nós construído cumpre todos os objectivos inicialmente traçados.
+\end{document}
