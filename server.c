@@ -39,8 +39,6 @@ typedef struct s_dist {
 // Estutura para Guardar os Filhos
 filho *filhos = NULL;
 
-int conta=0;
-
 char * ajudasemPrint(char* nome){
     int i=0;
     while(nome[i]!= '.')
@@ -55,20 +53,8 @@ char * ajudasemPrint(char* nome){
 // SIGPIPE
 void hand_pipe(int s){
     if (s == SIGPIPE){
-        /*
-        filho *aux = filhos;
-        aux = aux->next;
-        while(aux){
-            if(strcmp(aux->nome,"")!=0){
-                printf("\nKILL :: Filho %s com o PID %d\n",aux->nome,aux->pid);
-                kill(aux->pid,9);
-            }
-            aux = aux->next;
-        }
-        */
         printf("ERRROOOOOOO SIGPIPE\n");
     }
-    //exit(0);
 }
 
 // Inicializa Filho
@@ -257,6 +243,152 @@ void alterapid(char *dist, int pid){
     }
 }
 
+// Restart FIlho
+
+void restart_filho(char *n){
+    printf("O Filho %s com o pid %d Reiniciou!\n", n,getpid());
+    char linha_lista[BUFSIZ]; // Linha TXT
+    char *caminho[10];
+    char *saveptr; //strtok_r
+    char path[BUFSIZ]; // TXT
+    char *nome = strdup(n);
+    int valor,f_cts,f_fdin;
+    char f_myfifo[BUFSIZ];
+    char f_buf[BUFSIZ]; // String Recebida
+    char str[BUFSIZ]; // String Escrita File
+
+    sprintf(f_myfifo, "/tmp/%s",nome); // PATH Pipe
+
+    mkfifo(f_myfifo, 0666);
+    dist *d = NULL;
+    d = malloc(sizeof(dist));
+    initDist(d,nome);
+    sprintf(path, "/tmp/%s.txt",nome);
+    FILE *file_lista= fopen(path, "r");
+    while (fgets(linha_lista, BUFSIZ, file_lista)){
+        normaliza(linha_lista);
+        caminho[0] = strtok_r(linha_lista,":", &saveptr);
+        caminho[1] = strtok_r(NULL,":", &saveptr);
+        caminho[2] = strtok_r(NULL,":", &saveptr);
+        caminho[3] = strtok_r(NULL,":", &saveptr);
+        valor = atoi(caminho[3]);
+        addConc(d, caminho[1], valor);
+        addFreg(d, caminho[1], caminho[2], valor);
+    }
+    fclose(file_lista);
+    f_fdin = open(path,O_RDWR | O_APPEND,0666); // Escreve TXT
+    f_cts = open(f_myfifo, O_RDONLY); // Lê do Pipe
+    
+    while (1) {
+        read(f_cts, f_buf, BUFSIZ);
+        if (strcmp(f_buf,"")>0){
+            normaliza(f_buf);
+            caminho[0] = strtok_r(f_buf,":", &saveptr);
+            caminho[1] = strtok_r(NULL,":", &saveptr);
+            caminho[2] = strtok_r(NULL,":", &saveptr);
+            caminho[3] = strtok_r(NULL,":", &saveptr);
+            caminho[4] = strtok_r(NULL,":", &saveptr);
+            caminho[5] = strtok_r(NULL,":", &saveptr);
+            
+            if(strcmp(caminho[0],"agregar")==0){
+                dist *aux = d;
+                int n_path;
+                int nivel;
+                char *path2;
+
+                if (caminho[3]){
+                    nivel = atoi(caminho[2]);
+                    path2 = strdup(caminho[3]);
+                }
+                if (caminho[4]) {
+                    nivel = atoi(caminho[3]);
+                    path2 = strdup(caminho[4]);
+                }
+
+                if (caminho[5]){
+                    nivel = atoi(caminho[4]);
+                    path2 = strdup(caminho[5]);
+                }
+
+                path2=ajudasemPrint(path2);
+
+                n_path = open(path2,O_CREAT | O_TRUNC | O_WRONLY ,0666);
+
+                conc *aux2 = aux->concelhos;
+                if (strcmp(aux->nome,"") != 0) {
+                    if (nivel == 0){
+                        char str[BUFSIZ];
+                        sprintf(str,"%s:%d\n",aux->nome,aux->d_n_casos);
+                      //  printf("MSG|%s|\n", str);
+                        write(n_path,str,strlen(str));
+                    }
+                }
+
+                while (aux2){
+                    if (strcmp(aux2->nome,"") != 0) {
+                        if (nivel == 1){
+                            char str[BUFSIZ];
+                            sprintf(str,"%s:%s:%d\n",aux->nome,aux2->nome,aux2->c_n_casos);
+                            write(n_path,str,strlen(str));
+                        }
+                    }
+                    freg *aux3 = aux2->freguesias;
+                    while (aux3) {
+                        if (strcmp(aux3->nome,"") != 0) {
+                            if ((nivel == 2) && ((strcmp(aux2->nome,caminho[2])==0) || (atoi(caminho[2]) !=0))) {
+                                char str[BUFSIZ];
+                                sprintf(str,"%s:%s:%s:%d\n",aux->nome,aux2->nome,aux3->nome,aux3->f_n_casos);
+                                write(n_path,str,strlen(str));
+                            }
+                        }
+                        aux3 = aux3->next;
+                    }
+                    aux2 = aux2->next;
+                }
+                close(n_path);
+
+            } else if (strcmp(caminho[0],"lista")==0){
+                dist *aux = d;
+
+                conc *aux2 = aux->concelhos;
+                if (strcmp(aux->nome,"") != 0) {
+                    printf("NOME DISTRITO %s\n",aux->nome);
+                    printf("Nº Casos Distrito %d\n",aux->d_n_casos);
+                }
+                while (aux2){
+                    if (strcmp(aux2->nome,"") != 0) {
+                        printf("\tNOME CONCELHO %s\n",aux2->nome);
+                        printf("\tNº Casos Concelho %d\n",aux2->c_n_casos);
+                    }
+                    freg *aux3 = aux2->freguesias;
+                    while (aux3) {
+                        if (strcmp(aux3->nome,"") != 0) {
+                            printf("\t\tNOME FREGUESIA %s\n",aux3->nome);
+                            printf("\t\tNº Casos Freguesia %d\n",aux3->f_n_casos);
+                        }
+                        aux3 = aux3->next;
+                    }
+                    aux2 = aux2->next;
+                }
+                printf("\n");
+            } else {
+                addConc(d, caminho[1], atoi(caminho[3]));
+                addFreg(d, caminho[1], caminho[2], atoi(caminho[3]));
+                sprintf(str,"%s:%s:%s:%s\n",caminho[0],caminho[1],caminho[2],caminho[3]);
+                write(f_fdin,str,strlen(str));
+                memset(str, 0, sizeof(str));
+                memset(caminho, 0, sizeof(caminho));
+            } 
+        }
+
+        memset(f_buf, 0, sizeof(f_buf));
+
+    }
+    close(f_cts);
+    close(f_fdin);
+    _exit(1);
+}
+
 // Segue Filho
 void hand_chld(int s){
     if (s == SIGCHLD){
@@ -278,147 +410,7 @@ void hand_chld(int s){
         if (flag!=0){
             // CRIAR FILHO DE NOVO
             if ((pid=fork())==0){
-                printf("O Filho %s com o pid %d Reiniciou!\n", aux->nome,getpid());
-                char linha_lista[BUFSIZ]; // Linha TXT
-                char *caminho[10];
-                char *saveptr; //strtok_r
-                char path[BUFSIZ]; // TXT
-                char *nome = strdup(aux->nome);
-                int valor,f_cts,f_fdin;
-                char f_myfifo[BUFSIZ];
-                char f_buf[BUFSIZ]; // String Recebida
-                char str[BUFSIZ]; // String Escrita File
-
-                sprintf(f_myfifo, "/tmp/%s",nome); // PATH Pipe
-
-                mkfifo(f_myfifo, 0666);
-                dist *d = NULL;
-                d = malloc(sizeof(dist));
-                initDist(d,nome);
-                sprintf(path, "/tmp/%s.txt",nome);
-                FILE *file_lista= fopen(path, "r");
-                while (fgets(linha_lista, BUFSIZ, file_lista)){
-                    normaliza(linha_lista);
-                    caminho[0] = strtok_r(linha_lista,":", &saveptr);
-                    caminho[1] = strtok_r(NULL,":", &saveptr);
-                    caminho[2] = strtok_r(NULL,":", &saveptr);
-                    caminho[3] = strtok_r(NULL,":", &saveptr);
-                    valor = atoi(caminho[3]);
-                    addConc(d, caminho[1], valor);
-                    addFreg(d, caminho[1], caminho[2], valor);
-                }
-                fclose(file_lista);
-                f_fdin = open(path,O_RDWR | O_APPEND,0666); // Escreve TXT
-                f_cts = open(f_myfifo, O_RDONLY); // Lê do Pipe
-                
-                while (1) {
-                    read(f_cts, f_buf, BUFSIZ);
-                    if (strcmp(f_buf,"")>0){
-                        normaliza(f_buf);
-                        caminho[0] = strtok_r(f_buf,":", &saveptr);
-                        caminho[1] = strtok_r(NULL,":", &saveptr);
-                        caminho[2] = strtok_r(NULL,":", &saveptr);
-                        caminho[3] = strtok_r(NULL,":", &saveptr);
-                        caminho[4] = strtok_r(NULL,":", &saveptr);
-                        caminho[5] = strtok_r(NULL,":", &saveptr);
-                        
-                        if(strcmp(caminho[0],"agregar")==0){
-                            dist *aux = d;
-                            int n_path;
-                            int nivel;
-                            char *path2;
-
-                            if (caminho[3]){
-                                nivel = atoi(caminho[2]);
-                                path2 = strdup(caminho[3]);
-                            }
-                            if (caminho[4]) {
-                                nivel = atoi(caminho[3]);
-                                path2 = strdup(caminho[4]);
-                            }
-
-                            if (caminho[5]){
-                                nivel = atoi(caminho[4]);
-                                path2 = strdup(caminho[5]);
-                            }
-
-                            path2=ajudasemPrint(path2);
-
-                            n_path = open(path2,O_CREAT | O_TRUNC | O_WRONLY ,0666);
-
-                            conc *aux2 = aux->concelhos;
-                            if (strcmp(aux->nome,"") != 0) {
-                                if (nivel == 0){
-                                    char str[BUFSIZ];
-                                    sprintf(str,"%s:%d\n",aux->nome,aux->d_n_casos);
-                                  //  printf("MSG|%s|\n", str);
-                                    write(n_path,str,strlen(str));
-                                }
-                            }
-
-                            while (aux2){
-                                if (strcmp(aux2->nome,"") != 0) {
-                                    if (nivel == 1){
-                                        char str[BUFSIZ];
-                                        sprintf(str,"%s:%s:%d\n",aux->nome,aux2->nome,aux2->c_n_casos);
-                                        write(n_path,str,strlen(str));
-                                    }
-                                }
-                                freg *aux3 = aux2->freguesias;
-                                while (aux3) {
-                                    if (strcmp(aux3->nome,"") != 0) {
-                                        if ((nivel == 2) && ((strcmp(aux2->nome,caminho[2])==0) || (atoi(caminho[2]) !=0))) {
-                                            char str[BUFSIZ];
-                                            sprintf(str,"%s:%s:%s:%d\n",aux->nome,aux2->nome,aux3->nome,aux3->f_n_casos);
-                                            write(n_path,str,strlen(str));
-                                        }
-                                    }
-                                    aux3 = aux3->next;
-                                }
-                                aux2 = aux2->next;
-                            }
-                            close(n_path);
-
-                        } else if (strcmp(caminho[0],"lista")==0){
-                            dist *aux = d;
-
-                            conc *aux2 = aux->concelhos;
-                            if (strcmp(aux->nome,"") != 0) {
-                                printf("NOME DISTRITO %s\n",aux->nome);
-                                printf("Nº Casos Distrito %d\n",aux->d_n_casos);
-                            }
-                            while (aux2){
-                                if (strcmp(aux2->nome,"") != 0) {
-                                    printf("\tNOME CONCELHO %s\n",aux2->nome);
-                                    printf("\tNº Casos Concelho %d\n",aux2->c_n_casos);
-                                }
-                                freg *aux3 = aux2->freguesias;
-                                while (aux3) {
-                                    if (strcmp(aux3->nome,"") != 0) {
-                                        printf("\t\tNOME FREGUESIA %s\n",aux3->nome);
-                                        printf("\t\tNº Casos Freguesia %d\n",aux3->f_n_casos);
-                                    }
-                                    aux3 = aux3->next;
-                                }
-                                aux2 = aux2->next;
-                            }
-                            printf("\n");
-                        } else {
-                            addConc(d, caminho[1], atoi(caminho[3]));
-                            addFreg(d, caminho[1], caminho[2], atoi(caminho[3]));
-                            sprintf(str,"%s:%s:%s:%s\n",caminho[0],caminho[1],caminho[2],caminho[3]);
-                            write(f_fdin,str,strlen(str));
-                            memset(str, 0, sizeof(str));
-                            memset(caminho, 0, sizeof(caminho));
-                        } 
-                    }
-
-                    memset(f_buf, 0, sizeof(f_buf));
-
-                }
-                close(f_cts);
-                close(f_fdin);
-                _exit(1);
+                restart_filho(aux->nome);
 
             } else {
                 alterapid(aux->nome, pid);
@@ -427,21 +419,21 @@ void hand_chld(int s){
     }
 }
 
-// Incrementa
-int incrementar(char *nome[], unsigned valor){
+// Executa o incremento no filho
+int inc_exec(char *nome[], unsigned valor){
     filho *aux = filhos;
     int client_to_server;
-    
+
     //TRIM ' '
     if (nome[1] && (nome[1][0] == ' ')) nome[1] = tira(nome[1]);
     if (nome[2] && (nome[2][0] == ' ')) nome[2] = tira(nome[2]);
-    
+
     // Verifica se existe algum filho com o Distrito
     while (aux){
         if (strcmp(nome[0],aux->nome)==0) break;
         aux = aux->next;
     }
-    
+
     // Existe um Filho com o Distrito
     if (aux) {
         char fifo[BUFSIZ];
@@ -527,81 +519,79 @@ int incrementar(char *nome[], unsigned valor){
                         
                         conc *aux2 = aux->concelhos;
                         if (strcmp(aux->nome,"") != 0) {
-                           if (nivel == 0){
+                         if (nivel == 0){
+                            char str[BUFSIZ];
+                            sprintf(str,"%s:%d\n",aux->nome,aux->d_n_casos);
+                                  //  printf("MSG|%s|\n", str);
+                            write(n_path,str,strlen(str));
+                        }
+                    }
+                    while (aux2){
+                        if (strcmp(aux2->nome,"") != 0) {
+                            if (nivel == 1){
                                 char str[BUFSIZ];
-                                sprintf(str,"%s:%d\n",aux->nome,aux->d_n_casos);
+                                sprintf(str,"%s:%s:%d\n",aux->nome,aux2->nome,aux2->c_n_casos);
                                   //  printf("MSG|%s|\n", str);
                                 write(n_path,str,strlen(str));
                             }
                         }
-                        while (aux2){
-                            if (strcmp(aux2->nome,"") != 0) {
-                                if (nivel == 1){
-                                    char str[BUFSIZ];
-                                    sprintf(str,"%s:%s:%d\n",aux->nome,aux2->nome,aux2->c_n_casos);
-                                  //  printf("MSG|%s|\n", str);
-                                    write(n_path,str,strlen(str));
-                                }
+                        freg *aux3 = aux2->freguesias;
+                        while (aux3) {
+                            if (strcmp(aux3->nome,"") != 0) {
+                             if ((nivel == 2) && ((strcmp(aux2->nome,caminho[2])==0) || (atoi(caminho[2]) !=0))) {
+                                char str[BUFSIZ];
+                                sprintf(str,"%s:%s:%s:%d\n",aux->nome,aux2->nome,aux3->nome,aux3->f_n_casos);
+                                write(n_path,str,strlen(str));
                             }
-                            freg *aux3 = aux2->freguesias;
-                            while (aux3) {
-                                if (strcmp(aux3->nome,"") != 0) {
-                                   if ((nivel == 2) && ((strcmp(aux2->nome,caminho[2])==0) || (atoi(caminho[2]) !=0))) {
-                                        char str[BUFSIZ];
-                                        sprintf(str,"%s:%s:%s:%d\n",aux->nome,aux2->nome,aux3->nome,aux3->f_n_casos);
-                                        write(n_path,str,strlen(str));
-                                    }
-                                }
-                                aux3 = aux3->next;
-                            }
-                            aux2 = aux2->next;
                         }
-                        //printf("\n");
-                        printf("%d FIM AGREGAR\n",conta);
-                        close(n_path);
-
-                    } else if (strcmp(caminho[0],"lista")==0){
-                        dist *aux = d;
-
-                        conc *aux2 = aux->concelhos;
-                        if (strcmp(aux->nome,"") != 0) {
-                            printf("NOME DISTRITO %s\n",aux->nome);
-                            printf("Nº Casos Distrito %d\n",aux->d_n_casos);
-                        }
-                        while (aux2){
-                            if (strcmp(aux2->nome,"") != 0) {
-                                printf("\tNOME CONCELHO %s\n",aux2->nome);
-                                printf("\tNº Casos Concelho %d\n",aux2->c_n_casos);
-                            }
-                            freg *aux3 = aux2->freguesias;
-                            while (aux3) {
-                                if (strcmp(aux3->nome,"") != 0) {
-                                    printf("\t\tNOME FREGUESIA %s\n",aux3->nome);
-                                    printf("\t\tNº Casos Freguesia %d\n",aux3->f_n_casos);
-                                }
-                                aux3 = aux3->next;
-                            }
-                            aux2 = aux2->next;
-                        }
-                        printf("\n");
-                    } else {
-                        addConc(d, caminho[1], atoi(caminho[3]));
-                        addFreg(d, caminho[1], caminho[2], atoi(caminho[3]));
-                        sprintf(str,"%s:%s:%s:%s\n",caminho[0],caminho[1],caminho[2],caminho[3]);
-                        write(f_fdin,str,strlen(str));
-                        memset(str, 0, sizeof(str));
-                        memset(caminho, 0, sizeof(caminho));
-                    } 
+                        aux3 = aux3->next;
+                    }
+                    aux2 = aux2->next;
                 }
-                memset(f_buf, 0, sizeof(f_buf));
-                
-            }
-            close(f_cts);
-            close(f_fdin);
-            _exit(1);
+                close(n_path);
 
-        } else {
-            addFilho(filhos, nome[0], pid);
+            } else if (strcmp(caminho[0],"lista")==0){
+                dist *aux = d;
+
+                conc *aux2 = aux->concelhos;
+                if (strcmp(aux->nome,"") != 0) {
+                    printf("NOME DISTRITO %s\n",aux->nome);
+                    printf("Nº Casos Distrito %d\n",aux->d_n_casos);
+                }
+                while (aux2){
+                    if (strcmp(aux2->nome,"") != 0) {
+                        printf("\tNOME CONCELHO %s\n",aux2->nome);
+                        printf("\tNº Casos Concelho %d\n",aux2->c_n_casos);
+                    }
+                    freg *aux3 = aux2->freguesias;
+                    while (aux3) {
+                        if (strcmp(aux3->nome,"") != 0) {
+                            printf("\t\tNOME FREGUESIA %s\n",aux3->nome);
+                            printf("\t\tNº Casos Freguesia %d\n",aux3->f_n_casos);
+                        }
+                        aux3 = aux3->next;
+                    }
+                    aux2 = aux2->next;
+                }
+                printf("\n");
+            } else {
+                addConc(d, caminho[1], atoi(caminho[3]));
+                addFreg(d, caminho[1], caminho[2], atoi(caminho[3]));
+                sprintf(str,"%s:%s:%s:%s\n",caminho[0],caminho[1],caminho[2],caminho[3]);
+                write(f_fdin,str,strlen(str));
+                memset(str, 0, sizeof(str));
+                memset(caminho, 0, sizeof(caminho));
+            } 
+        }
+        memset(f_buf, 0, sizeof(f_buf));
+
+    }
+    close(f_cts);
+    close(f_fdin);
+    _exit(1);
+
+} else {
+    addFilho(filhos, nome[0], pid);
             signal(SIGCHLD,hand_chld); //Child Follow
         }
     }
@@ -687,8 +677,8 @@ int main(int argc, char const *argv[]){
                 caminho[0] = strtok_r(caminho_s,",", &caminho[1]);
                 caminho[1] = strtok_r(caminho[1],",", &caminho[2]);
                 
-                if (incrementar(caminho,atoi(valor))==0){
-                    conta++;
+                if (inc_exec(caminho,atoi(valor))==0){
+                    //conta++;
                     //printf("Adicionado com Sucesso!! %d\n",conta);
                 } else {
                     printf("Erro ao Adicionar!!\n");
@@ -709,39 +699,39 @@ int main(int argc, char const *argv[]){
                 if (r && t && strcmp(t,"lista") == 0) {
                     mensagem(r,"lista");
                 } else {                
-                filho *aux = filhos;
-                while (aux){
-                    if (strcmp(aux->nome,"")!=0){
-                        mensagem(aux->nome,"lista");
+                    filho *aux = filhos;
+                    while (aux){
+                        if (strcmp(aux->nome,"")!=0){
+                            mensagem(aux->nome,"lista");
+                        }
+                        aux = aux->next;
                     }
-                    aux = aux->next;
-                }
                 }
             } else if ((buf[0] == 'a') && (buf[1] == 'g')) {
-            t = strtok_r(buf," ",&r);
-            if (r && t && strcmp(t,"agregar") == 0) {
-                char *agrega[20];
-                char *valor,*aux,*path;
-                char *resto;
-                int nivel;
-                agrega[0] = buf;
-                aux = strtok_r(NULL,"]",&r);
-                resto = strdup(r);
-                tira(aux);
-                agrega[1] = strtok_r(aux,",",&r);
-                agrega[2] = strtok_r(NULL,",",&r);
-                agrega[3] = strtok_r(NULL,",",&r);
-                valor = strtok_r(resto," ",&r);
-                path = strdup(r);
+                t = strtok_r(buf," ",&r);
+                if (r && t && strcmp(t,"agregar") == 0) {
+                    char *agrega[20];
+                    char *valor,*aux,*path;
+                    char *resto;
+                    int nivel;
+                    agrega[0] = buf;
+                    aux = strtok_r(NULL,"]",&r);
+                    resto = strdup(r);
+                    tira(aux);
+                    agrega[1] = strtok_r(aux,",",&r);
+                    agrega[2] = strtok_r(NULL,",",&r);
+                    agrega[3] = strtok_r(NULL,",",&r);
+                    valor = strtok_r(resto," ",&r);
+                    path = strdup(r);
                 //TRIM ' '
-                if (agrega[2] && (agrega[2][0] == ' ')) agrega[2] = tira(agrega[2]);
-                if (agrega[3] && (agrega[3][0] == ' ')) agrega[3] = tira(agrega[3]);
-                nivel = atoi(valor);
-                agregar(agrega,nivel,path);
+                    if (agrega[2] && (agrega[2][0] == ' ')) agrega[2] = tira(agrega[2]);
+                    if (agrega[3] && (agrega[3][0] == ' ')) agrega[3] = tira(agrega[3]);
+                    nivel = atoi(valor);
+                    agregar(agrega,nivel,path);
+                }
+            } else {
+                printf("COMANDO ERRADO!!\n");
             }
-        } else {
-            printf("COMANDO ERRADO!!\n");
-        }
 
         }
         memset(buf, 0, sizeof(buf));
